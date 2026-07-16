@@ -45,7 +45,8 @@ function load_progress(path)
         throw(ArgumentError("progress file must contain exactly: schema_version, ordered, completed, current"))
 
     schema_version = values["schema_version"]
-    schema_version isa Integer || throw(ArgumentError("schema_version must be an integer"))
+    schema_version isa Integer && !(schema_version isa Bool) ||
+        throw(ArgumentError("schema_version must be an integer"))
     current = values["current"]
     current isa AbstractString || throw(ArgumentError("current must be a string ID"))
 

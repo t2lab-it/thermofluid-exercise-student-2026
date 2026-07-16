@@ -50,8 +50,10 @@ const EXPECTED_ORDER = [
 
         for invalid in (
             merge(valid, Dict("schema_version" => 2)),
+            merge(valid, Dict("schema_version" => true)),
             merge(valid, Dict("ordered" => EXPECTED_ORDER[1:end-1])),
             merge(valid, Dict("ordered" => vcat(EXPECTED_ORDER, ["N11"]))),
+            merge(valid, Dict("ordered" => [EXPECTED_ORDER[2], EXPECTED_ORDER[1], EXPECTED_ORDER[3:end]...])),
             merge(valid, Dict("ordered" => vcat(EXPECTED_ORDER[1:end-1], ["N09"]))),
             merge(valid, Dict("completed" => ["F00", "F00"])),
             merge(valid, Dict("completed" => ["F00", "F02"])),
