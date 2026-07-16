@@ -65,22 +65,37 @@ function make_course_repo(; current="F01", failing_current=false)
     repo
 end
 
-function install_git_recorder()
+function install_git_recorder(; windows=Sys.iswindows())
     directory = mktempdir()
     bin = joinpath(directory, "bin")
     mkpath(bin)
     log = joinpath(directory, "git-commands")
     real_git = Sys.which("git")
     isnothing(real_git) && error("git is required for CLI tests")
-    wrapper = joinpath(bin, "git")
-    open(wrapper, "w") do output
-        println(output, "#!/bin/sh")
-        println(output, "printf 'git %s\\n' \"\u0024*\" >> \"\u0024COURSE_GIT_LOG\"")
-        println(output, "case \"\u00241\" in pull|push|fetch) exit 97 ;; esac")
-        println(output, "exec \"$real_git\" \"\u0024@\"")
+    prohibited = "pull push fetch clone remote merge"
+
+    if windows
+        wrapper = joinpath(bin, "git.cmd")
+        open(wrapper, "w") do output
+            println(output, "@echo off")
+            println(output, ">>\"%COURSE_GIT_LOG%\" echo git %*")
+            println(output, "for %%A in (%*) do for %%V in ($prohibited) do if /I \"%%~A\"==\"%%V\" exit /b 97")
+            println(output, "\"$real_git\" %*")
+            println(output, "exit /b %ERRORLEVEL%")
+        end
+    else
+        wrapper = joinpath(bin, "git")
+        open(wrapper, "w") do output
+            println(output, "#!/bin/sh")
+            println(output, "printf 'git %s\\n' \"\u0024*\" >> \"\u0024COURSE_GIT_LOG\"")
+            println(output, "for argument in \"\u0024@\"; do")
+            println(output, "  case \"\u0024argument\" in pull|push|fetch|clone|remote|merge) exit 97 ;; esac")
+            println(output, "done")
+            println(output, "exec \"$real_git\" \"\u0024@\"")
+        end
+        chmod(wrapper, 0o755)
     end
-    chmod(wrapper, 0o755)
-    (bin=bin, log=log)
+    (bin=bin, log=log, wrapper=wrapper)
 end
 
 function run_course(repo, arguments)
@@ -91,6 +106,7 @@ function run_course(repo, arguments)
         command,
         "PATH" => string(recorder.bin, Sys.iswindows() ? ';' : ':', ENV["PATH"]),
         "COURSE_GIT_LOG" => recorder.log,
+        "COURSE_TASK_TEST_ROOT" => joinpath(repo, "test", "tasks"),
     )
     result = command_result(command)
     executed_commands = isfile(recorder.log) ? read(recorder.log, String) : ""
@@ -184,4 +200,81 @@ end
         @test occursin(joinpath("scripts", "course.jl"), bad.stderr)
         @test !occursin("PowerShell", bad.stderr)
     end
+end
+if get(ENV, "COURSE_SELECTION_PROBE_CHILD", "0") != "1"
+@testset "Task 3 review regressions" begin
+    @testset "Git recorder is cross-platform and rejects automated history or network verbs" begin
+        unix_recorder = try
+            install_git_recorder(windows=false)
+        catch exception
+            nothing
+        end
+        windows_recorder = try
+            install_git_recorder(windows=true)
+        catch exception
+            nothing
+        end
+        @test !isnothing(unix_recorder)
+        @test !isnothing(windows_recorder)
+        if !isnothing(unix_recorder) && !isnothing(windows_recorder)
+            @test endswith(unix_recorder.wrapper, "git")
+            @test endswith(windows_recorder.wrapper, "git.cmd")
+            @test occursin("#!/bin/sh", read(unix_recorder.wrapper, String))
+            @test occursin("@echo off", lowercase(read(windows_recorder.wrapper, String)))
+            for verb in ("pull", "push", "fetch", "clone", "remote", "merge")
+                @test occursin(verb, read(unix_recorder.wrapper, String))
+                @test occursin(verb, read(windows_recorder.wrapper, String))
+                command = Cmd([unix_recorder.wrapper, "-C", make_course_repo(), verb])
+                result = command_result(addenv(command, "COURSE_GIT_LOG" => unix_recorder.log))
+                @test result.exitcode == 97
+            end
+        end
+    end
+
+    @testset "start rolls back its branch when progress persistence fails" begin
+        repo = make_course_repo()
+        before = progress_snapshot(repo)
+        probe = """
+        course_script = $(repr(COURSE_SCRIPT))
+        root = ARGS[1]
+        source = read(course_script, String)
+        guarded = occursin("abspath(PROGRAM_FILE)", source)
+        if guarded
+            include(course_script)
+        else
+            entrypoint = findfirst("\\ntry\\n    exit(main())", source)
+            include_string(Main, source[begin:(first(entrypoint) - 1)], course_script)
+            @eval CourseWorkflow save_progress(path::AbstractString, state::ProgressState) =
+                error("injected persistence failure")
+        end
+        try
+            if guarded
+                start_exercise(root, "F02"; persist_progress=(path, state) -> error("injected persistence failure"))
+            else
+                start_exercise(root, "F02")
+            end
+        catch exception
+            println("caught: ", sprint(showerror, exception))
+        end
+        println("rollback probe complete")
+        """
+        command = Cmd(Cmd([
+            Base.julia_cmd().exec...,
+            "--startup-file=no",
+            "--project=$repo",
+            "-e",
+            probe,
+            repo,
+        ]); dir=repo)
+        command = addenv(command, "COURSE_TASK_TEST_ROOT" => joinpath(repo, "test", "tasks"))
+        result = command_result(command)
+        @test result.exitcode == 0
+        @test occursin("injected persistence failure", result.stdout)
+        @test occursin("rollback probe complete", result.stdout)
+        @test readchomp(`git -C $repo branch --show-current`) == "main"
+        branches = read(Cmd(["git", "-C", repo, "branch", "--format=%(refname:short)"]), String)
+        @test !occursin("exercise/F02-julia-arrays-and-tests", branches)
+        @test progress_snapshot(repo) == before
+    end
+end
 end

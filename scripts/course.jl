@@ -68,7 +68,7 @@ function show_status(root)
     println("Completed: $completed")
 end
 
-function start_exercise(root, id)
+function start_exercise(root, id; persist_progress=save_progress)
     progress_path = joinpath(root, "course_progress.toml")
     state = load_progress(progress_path)
     require_preflight(root)
@@ -87,7 +87,17 @@ function start_exercise(root, id)
         vcat(state.completed, [state.current]),
         id,
     )
-    save_progress(progress_path, advanced)
+    try
+        persist_progress(progress_path, advanced)
+    catch persistence_error
+        try
+            run(Cmd(`git switch main`; dir=root))
+            run(Cmd(`git branch -D $branch`; dir=root))
+        catch rollback_error
+            throw(CompositeException([persistence_error, rollback_error]))
+        end
+        rethrow()
+    end
 
     println("Started $id on $branch.")
     println("When your work is committed, publish it with:")
@@ -118,9 +128,11 @@ function main(arguments=ARGS; root=pwd())
     0
 end
 
-try
-    exit(main())
-catch exception
-    println(stderr, "error: ", sprint(showerror, exception))
-    exit(1)
+if abspath(PROGRAM_FILE) == @__FILE__
+    try
+        exit(main())
+    catch exception
+        println(stderr, "error: ", sprint(showerror, exception))
+        exit(1)
+    end
 end
