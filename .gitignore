@@ -1,0 +1,4 @@
+.worktrees/
+scratch/*
+!scratch/.gitkeep
+
