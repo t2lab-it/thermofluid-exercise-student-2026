@@ -53,6 +53,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 - `results/N01/summary.toml`
 
 `test/student/N01.jl`には、手計算できる更新式または安定・不安定比較を一つだけ選び、入力と期待値が分かる代表テストを書いてください。学習ログには、そのテストが保証することと保証しないことを分けて記録します。
+書き終えたら`STUDENT_TEST_REQUIRED(N01)`の説明と`@test false`を削除し、自分のテストが実際に通ることを確認します。
 
 ## AI利用と情報管理
 

@@ -5,6 +5,7 @@ const N01_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const N01_RUN = joinpath(N01_ROOT, "exercises", "N01_linear_advection", "run.jl")
 const N01_TASK = joinpath(N01_ROOT, "exercises", "N01_linear_advection", "TASK.md")
 const N01_LOG = joinpath(N01_ROOT, "learning_logs", "templates", "N01.md")
+const N01_STUDENT_TEST = joinpath(N01_ROOT, "test", "student", "N01.jl")
 
 @testset "N01 self-contained linear advection" begin
     project = TOML.parsefile(joinpath(N01_ROOT, "Project.toml"))
@@ -38,20 +39,27 @@ const N01_LOG = joinpath(N01_ROOT, "learning_logs", "templates", "N01.md")
         for function_name in (
             "rectangular_initial_condition", "upwind_step!", "centered_step!",
         )
-            function_position = findfirst("function $function_name", source)
-            @test !isnothing(function_position)
-            if !isnothing(function_position)
-                context_start = thisind(source, max(first(function_position) - 240, firstindex(source)))
-                context = source[context_start:prevind(source, first(function_position))]
-                @test occursin(r"[ぁ-んァ-ヶ一-龠]", context)
+            attached = match(Regex(
+                "\"\"\"((?:(?!\"\"\")[\\s\\S])*)\"\"\"\\s*function\\s+" *
+                function_name * "\\s*\\(",
+            ), source)
+            @test !isnothing(attached)
+            if !isnothing(attached)
+                @test occursin(r"[ぁ-んァ-ヶ一-龠]", only(attached.captures))
             end
         end
-        for english_docstring in (
-            "Return the rectangular pulse used by the N01 advection experiment.",
-            "Advance one step with first-order upwind space and forward Euler time.",
-            "Advance one intentionally unstable step with centered space and Euler time.",
-        )
-            @test !occursin(english_docstring, source)
+        @test !occursin("台形部", source)
+        for function_name in ("upwind_step!", "centered_step!")
+            editable_prefix = match(Regex(
+                "function\\s+" * function_name *
+                "\\s*\\([\\s\\S]*?# TODO\\(N01\\):",
+            ), source)
+            @test !isnothing(editable_prefix)
+            if !isnothing(editable_prefix)
+                @test occursin("CFL数", editable_prefix.match)
+                @test occursin("copyto!", editable_prefix.match)
+                @test occursin("端点", editable_prefix.match)
+            end
         end
         for name in (
             :rectangular_initial_condition, :apply_boundary!, :upwind_step!, :centered_step!,
@@ -190,6 +198,26 @@ const N01_LOG = joinpath(N01_ROOT, "learning_logs", "templates", "N01.md")
         @test occursin("時間ループ", task) && occursin("バッファ交換", task)
         @test occursin("詳細な入力検証", task) && occursin("提供済み", task)
         @test !occursin("CairoMakie", task)
+    end
+    @test isfile(N01_STUDENT_TEST)
+    if isfile(N01_STUDENT_TEST)
+        student_test = read(N01_STUDENT_TEST, String)
+        scaffold_marker = "STUDENT_TEST_REQUIRED(N01)"
+        has_scaffold =
+            occursin(scaffold_marker, student_test) &&
+            occursin("@test false", student_test)
+        calls_numerical_function = occursin(
+            r"N01LinearAdvection\.(rectangular_initial_condition|upwind_step!|centered_step!|simulate)\s*\(",
+            student_test,
+        )
+        has_completed_test =
+            !occursin(scaffold_marker, student_test) &&
+            !occursin("@test false", student_test) &&
+            occursin("@test", student_test) &&
+            calls_numerical_function
+        @test !occursin("isdefined(N01LinearAdvection, :simulate)", student_test)
+        @test !occursin("[1.0, 1.5, 3.0, 8.0]", student_test)
+        @test has_scaffold || has_completed_test
     end
     @test isfile(N01_LOG)
     if isfile(N01_LOG)

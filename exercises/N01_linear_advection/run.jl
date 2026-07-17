@@ -24,7 +24,7 @@ function rectangular_initial_condition(
         throw(ArgumentError("初期条件のパラメータを有限値にしてください"))
     all(diff(x) .> 0) || throw(ArgumentError("xを狭義単調増加にしてください"))
     first(x) <= plateau_start <= plateau_end <= last(x) ||
-        throw(ArgumentError("台形部を計算領域内に置いてください"))
+        throw(ArgumentError("矩形領域を計算領域内に置いてください"))
 
     # TODO(N01): 矩形状の初期分布を実装する。
     return fill(float(base), length(x))
@@ -33,7 +33,9 @@ end
 """風上差分と陽Euler法で1ステップ進める。"""
 function upwind_step!(u_new, u_old, c::Real, dt::Real, dx::Real)
     validate_step_inputs(u_new, u_old, c, dt, dx)
+    # courantは1ステップで進む格子幅の割合を表すCFL数です。
     courant = c * dt / dx
+    # copyto!で古い値を複製し、内部を更新する間も両端点の値を保ちます。
     copyto!(u_new, u_old)
     for i in 2:(length(u_old) - 1)
         # TODO(N01): 風上差分と陽Eulerによる更新式を実装する。
@@ -45,7 +47,9 @@ end
 """意図的に不安定な中心差分と陽Euler法で1ステップ進める。"""
 function centered_step!(u_new, u_old, c::Real, dt::Real, dx::Real)
     validate_step_inputs(u_new, u_old, c, dt, dx)
+    # courantは1ステップで進む格子幅の割合を表すCFL数です。
     courant = c * dt / dx
+    # copyto!で古い値を複製し、内部を更新する間も両端点の値を保ちます。
     copyto!(u_new, u_old)
     for i in 2:(length(u_old) - 1)
         # TODO(N01): 中心差分と陽Eulerによる更新式を実装する。
