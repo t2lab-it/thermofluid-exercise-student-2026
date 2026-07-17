@@ -6,8 +6,88 @@ const N01_RUN = joinpath(N01_ROOT, "exercises", "N01_linear_advection", "run.jl"
 const N01_TASK = joinpath(N01_ROOT, "exercises", "N01_linear_advection", "TASK.md")
 const N01_LOG = joinpath(N01_ROOT, "learning_logs", "templates", "N01.md")
 const N01_STUDENT_TEST = joinpath(N01_ROOT, "test", "student", "N01.jl")
+const N01_NUMERICAL_FUNCTIONS = Set((
+    :rectangular_initial_condition,
+    :upwind_step!,
+    :centered_step!,
+    :simulate,
+))
+
+function n01_ast_contains(predicate, node)
+    predicate(node) && return true
+    node isa Expr || return false
+    node.head in (:quote, :inert) && return false
+    return any(child -> n01_ast_contains(predicate, child), node.args)
+end
+
+function n01_numerical_call(node)
+    node isa Expr && node.head == :call || return false
+    callee = first(node.args)
+    callee isa Expr && callee.head == :. && length(callee.args) == 2 || return false
+    module_name, quoted_name = callee.args
+    return module_name == :N01LinearAdvection &&
+           quoted_name isa QuoteNode &&
+           quoted_name.value in N01_NUMERICAL_FUNCTIONS
+end
+
+function n01_test_assertion(node)
+    node isa Expr && node.head == :macrocall && length(node.args) >= 3 || return nothing
+    first(node.args) == Symbol("@test") || return nothing
+    return node.args[3]
+end
+
+function n01_student_test_state(source)
+    parsed = try
+        Meta.parseall(source)
+    catch
+        return (; is_scaffold = false, is_completed = false)
+    end
+
+    scaffold_marker = "STUDENT_TEST_REQUIRED(N01)"
+    has_literal_false = n01_ast_contains(node -> n01_test_assertion(node) === false, parsed)
+    has_nontrivial_test = n01_ast_contains(parsed) do node
+        assertion = n01_test_assertion(node)
+        !isnothing(assertion) && !(assertion isa Bool)
+    end
+    calls_numerical_function = n01_ast_contains(n01_numerical_call, parsed)
+
+    is_scaffold = occursin(scaffold_marker, source) && has_literal_false
+    is_completed =
+        !occursin(scaffold_marker, source) &&
+        !has_literal_false &&
+        has_nontrivial_test &&
+        calls_numerical_function
+    return (; is_scaffold, is_completed)
+end
 
 @testset "N01 self-contained linear advection" begin
+    @testset "student numerical-test detector" begin
+        scaffold = n01_student_test_state("""
+            # STUDENT_TEST_REQUIRED(N01): student-owned placeholder
+            @test false
+        """)
+        @test scaffold.is_scaffold
+        @test !scaffold.is_completed
+
+        commented_call = n01_student_test_state("""
+            # N01LinearAdvection.simulate(; scheme=:upwind)
+            @test true
+        """)
+        @test !commented_call.is_completed
+
+        old_smoke = n01_student_test_state("""
+            @test isdefined(N01LinearAdvection, :simulate)
+        """)
+        @test !old_smoke.is_completed
+
+        valid_authored = n01_student_test_state("""
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            @test result.minimum >= 1.0
+        """)
+        @test !valid_authored.is_scaffold
+        @test valid_authored.is_completed
+    end
+
     project = TOML.parsefile(joinpath(N01_ROOT, "Project.toml"))
     @test Set(keys(project["deps"])) == Set(["Plots", "TOML"])
     @test !occursin("CairoMakie", read(joinpath(N01_ROOT, "Manifest.toml"), String))
@@ -202,22 +282,10 @@ const N01_STUDENT_TEST = joinpath(N01_ROOT, "test", "student", "N01.jl")
     @test isfile(N01_STUDENT_TEST)
     if isfile(N01_STUDENT_TEST)
         student_test = read(N01_STUDENT_TEST, String)
-        scaffold_marker = "STUDENT_TEST_REQUIRED(N01)"
-        has_scaffold =
-            occursin(scaffold_marker, student_test) &&
-            occursin("@test false", student_test)
-        calls_numerical_function = occursin(
-            r"N01LinearAdvection\.(rectangular_initial_condition|upwind_step!|centered_step!|simulate)\s*\(",
-            student_test,
-        )
-        has_completed_test =
-            !occursin(scaffold_marker, student_test) &&
-            !occursin("@test false", student_test) &&
-            occursin("@test", student_test) &&
-            calls_numerical_function
+        state = n01_student_test_state(student_test)
         @test !occursin("isdefined(N01LinearAdvection, :simulate)", student_test)
         @test !occursin("[1.0, 1.5, 3.0, 8.0]", student_test)
-        @test has_scaffold || has_completed_test
+        @test state.is_scaffold || state.is_completed
     end
     @test isfile(N01_LOG)
     if isfile(N01_LOG)
