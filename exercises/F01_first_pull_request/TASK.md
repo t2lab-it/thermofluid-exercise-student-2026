@@ -7,19 +7,28 @@
 ## 編集対象
 
 - `exercises/F01_first_pull_request/run.jl`
+- `test/student/F01.jl`
 - `learning_logs/F01.md`
 
 この課題ではbranch作成を手動で経験します。`scripts/course.jl start F02`を使うのはF01をmergeした後です。F01ではAgentの利用を説明、エラー解説、練習問題に限り、TODOの答えそのものは自分で書きます。
 
 ## 手順
 
-1. `main`にいることを確認し、手動で課題branchを作ります。
+1. `main`にいることと、F00完了後の変更を確認してから、手動で課題branchを作ります。
+
+   ```bash
+   git branch --show-current
+   git status --short
+   git diff -- course_progress.toml
+   ```
+
+   F00からF01へ進んだときは、`course_progress.toml`だけが変更済みと表示されるのが正常です。F00はGit commitを行わない課題なので、この進捗変更はF01で初めてcommitします。ほかの変更がある場合はbranchを作らず、教員・TAへ相談してください。
 
    ```bash
    git switch -c exercise/F01-first-pull-request
    ```
 
-2. `run.jl`の`student_greeting`にあるTODOを実装します。前後の空白を除いた名前`name`に対し、`Hello, name!`という`String`を返してください。空白だけの名前を拒否する処理は変更しません。
+2. `run.jl`の`student_greeting`にあるTODOを実装します。前後の空白を除いた名前`name`に対し、`Hello, name!`という`String`を返してください。空白だけの名前を拒否する処理は変更しません。次に、`test/student/F01.jl`のsmoke TODOを、自分で選んだ名前を使う代表的な挨拶のテストへ置き換えます。
 
 3. ローカルで実行し、テストします。
 
@@ -37,7 +46,7 @@
    ```bash
    git status --short
    git diff
-   git add course_progress.toml exercises/F01_first_pull_request/run.jl learning_logs/F01.md
+   git add course_progress.toml exercises/F01_first_pull_request/run.jl test/student/F01.jl learning_logs/F01.md
    git commit -m "feat: complete F01 first pull request"
    ```
 
@@ -65,6 +74,7 @@
 ## 完了条件
 
 - `student_greeting`が提供テストと自分の確認例を通る。
+- `test/student/F01.jl`を代表例へ変更し、そのテストが通る。
 - 公式出力がないことを確認した。
 - `learning_logs/F01.md`を記入した。
 - 指定branch、1件のPull Request、Actions、diff、セルフレビュー、mergeを順に経験した。

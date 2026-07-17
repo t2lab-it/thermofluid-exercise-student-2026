@@ -35,7 +35,21 @@ end
                 "https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F01.html",
                 task,
             )
+            @test occursin("- `test/student/F01.jl`", task)
+            @test occursin("`course_progress.toml`だけ", task)
+            @test occursin("F00からF01", task)
+            @test occursin("F01で初めてcommit", task)
+            @test occursin("`test/student/F01.jl`のsmoke TODO", task)
+            @test occursin("代表的な挨拶", task)
+            @test occursin(
+                "git add course_progress.toml exercises/F01_first_pull_request/run.jl test/student/F01.jl learning_logs/F01.md",
+                task,
+            )
+            @test occursin("完了条件", task)
+            @test occursin("`test/student/F01.jl`を代表例へ変更", task)
             @test ordered_contract(task, [
+                "git status --short",
+                "F00からF01",
                 "git switch -c exercise/F01-first-pull-request",
                 "TODOを実装",
                 "Pkg.test()",
