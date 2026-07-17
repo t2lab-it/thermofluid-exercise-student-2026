@@ -16,7 +16,7 @@ const N01_NUMERICAL_FUNCTIONS = Set((
 function n01_ast_contains(predicate, node)
     predicate(node) && return true
     node isa Expr || return false
-    node.head in (:quote, :inert) && return false
+    node.head in (:quote, :inert, :function, :macro, :->) && return false
     return any(child -> n01_ast_contains(predicate, child), node.args)
 end
 
@@ -36,6 +36,31 @@ function n01_test_assertion(node)
     return node.args[3]
 end
 
+function n01_collect_test_evidence!(assigned_results, assertions, node)
+    node isa Expr || return nothing
+    node.head in (:quote, :inert, :function, :macro, :->) && return nothing
+
+    if node.head == :(=) && length(node.args) == 2
+        variable, value = node.args
+        if variable isa Symbol && n01_ast_contains(n01_numerical_call, value)
+            push!(assigned_results, variable)
+        end
+    end
+
+    assertion = n01_test_assertion(node)
+    isnothing(assertion) || push!(assertions, assertion)
+    foreach(child -> n01_collect_test_evidence!(assigned_results, assertions, child), node.args)
+    return nothing
+end
+
+function n01_assertion_uses_numerical_result(assertion, assigned_results)
+    assertion isa Bool && return false
+    n01_ast_contains(n01_numerical_call, assertion) && return true
+    return n01_ast_contains(assertion) do node
+        node isa Symbol && node in assigned_results
+    end
+end
+
 function n01_student_test_state(source)
     parsed = try
         Meta.parseall(source)
@@ -45,18 +70,18 @@ function n01_student_test_state(source)
 
     scaffold_marker = "STUDENT_TEST_REQUIRED(N01)"
     has_literal_false = n01_ast_contains(node -> n01_test_assertion(node) === false, parsed)
-    has_nontrivial_test = n01_ast_contains(parsed) do node
-        assertion = n01_test_assertion(node)
-        !isnothing(assertion) && !(assertion isa Bool)
+    assigned_results = Set{Symbol}()
+    assertions = Any[]
+    n01_collect_test_evidence!(assigned_results, assertions, parsed)
+    has_meaningful_test = any(assertions) do assertion
+        n01_assertion_uses_numerical_result(assertion, assigned_results)
     end
-    calls_numerical_function = n01_ast_contains(n01_numerical_call, parsed)
 
     is_scaffold = occursin(scaffold_marker, source) && has_literal_false
     is_completed =
         !occursin(scaffold_marker, source) &&
         !has_literal_false &&
-        has_nontrivial_test &&
-        calls_numerical_function
+        has_meaningful_test
     return (; is_scaffold, is_completed)
 end
 
@@ -69,23 +94,53 @@ end
         @test scaffold.is_scaffold
         @test !scaffold.is_completed
 
-        commented_call = n01_student_test_state("""
+        for rejected_source in (
+            """
             # N01LinearAdvection.simulate(; scheme=:upwind)
             @test true
-        """)
-        @test !commented_call.is_completed
-
-        old_smoke = n01_student_test_state("""
+            """,
+            """
+            "N01LinearAdvection.simulate(; scheme=:upwind)"
+            @test 1 == 1
+            """,
+            """
+            quote
+                N01LinearAdvection.simulate(; scheme=:upwind)
+            end
+            @test 1 == 1
+            """,
+            """
             @test isdefined(N01LinearAdvection, :simulate)
-        """)
-        @test !old_smoke.is_completed
+            """,
+            """
+            N01LinearAdvection.simulate(; scheme=:upwind)
+            @test 1 == 1
+            """,
+            """
+            function never_called()
+                N01LinearAdvection.simulate(; scheme=:upwind)
+            end
+            @test 1 == 1
+            """,
+            "result = N01LinearAdvection.simulate(",
+        )
+            rejected = n01_student_test_state(rejected_source)
+            @test !rejected.is_scaffold
+            @test !rejected.is_completed
+        end
 
-        valid_authored = n01_student_test_state("""
+        direct_assertion = n01_student_test_state("""
+            @test N01LinearAdvection.simulate(; scheme=:upwind).minimum >= 1.0
+        """)
+        @test !direct_assertion.is_scaffold
+        @test direct_assertion.is_completed
+
+        assigned_result = n01_student_test_state("""
             result = N01LinearAdvection.simulate(; scheme=:upwind)
             @test result.minimum >= 1.0
         """)
-        @test !valid_authored.is_scaffold
-        @test valid_authored.is_completed
+        @test !assigned_result.is_scaffold
+        @test assigned_result.is_completed
     end
 
     project = TOML.parsefile(joinpath(N01_ROOT, "Project.toml"))
