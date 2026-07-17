@@ -8,7 +8,9 @@ export simulate, write_summary, make_plots, main
 
 const DEFAULT_OUTPUT_DIR = normpath(joinpath(@__DIR__, "..", "..", "results", "N01"))
 
-"""Return the rectangular pulse used by the N01 advection experiment."""
+# === 学生が実装する3つの関数 ===
+
+"""N01の移流実験で使う矩形状の初期分布を返す。"""
 function rectangular_initial_condition(
     x::AbstractVector{<:Real};
     base::Real = 1.0,
@@ -16,64 +18,54 @@ function rectangular_initial_condition(
     plateau_start::Real = 0.5,
     plateau_end::Real = 1.0,
 )
-    isempty(x) && throw(ArgumentError("x must not be empty"))
-    all(isfinite, x) || throw(ArgumentError("x must contain only finite values"))
+    isempty(x) && throw(ArgumentError("xを空にすることはできません"))
+    all(isfinite, x) || throw(ArgumentError("xの全要素を有限値にしてください"))
     all(isfinite, (base, plateau, plateau_start, plateau_end)) ||
-        throw(ArgumentError("initial-condition parameters must be finite"))
-    all(diff(x) .> 0) || throw(ArgumentError("x must be strictly increasing"))
+        throw(ArgumentError("初期条件のパラメータを有限値にしてください"))
+    all(diff(x) .> 0) || throw(ArgumentError("xを狭義単調増加にしてください"))
     first(x) <= plateau_start <= plateau_end <= last(x) ||
-        throw(ArgumentError("the plateau must lie inside the domain"))
+        throw(ArgumentError("台形部を計算領域内に置いてください"))
 
-    # TODO(N01): choose `plateau` only where plateau_start <= x[i] <= plateau_end.
+    # TODO(N01): 矩形状の初期分布を実装する。
     return fill(float(base), length(x))
 end
 
-"""Apply the fixed left value and a zero-gradient condition at the right edge."""
-function apply_boundary!(u::AbstractVector{<:Real}; left_value::Real = 1.0)
-    length(u) >= 2 || throw(ArgumentError("u must contain at least two points"))
-    isfinite(left_value) || throw(ArgumentError("left_value must be finite"))
-    u[1] = left_value
-    u[end] = u[end - 1]
-    return u
-end
-
-function validate_step_inputs(u_new, u_old, c, dt, dx)
-    u_new === u_old && throw(ArgumentError("use separate old and new buffers"))
-    length(u_new) == length(u_old) >= 3 ||
-        throw(ArgumentError("both buffers must have the same length of at least three"))
-    all(isfinite, u_old) || throw(ArgumentError("u_old must contain only finite values"))
-    all(isfinite, (c, dt, dx)) || throw(ArgumentError("c, dt, and dx must be finite"))
-    c > 0 || throw(ArgumentError("N01 supports only positive advection speed"))
-    dt > 0 || throw(ArgumentError("dt must be positive"))
-    dx > 0 || throw(ArgumentError("dx must be positive"))
-    return nothing
-end
-
-"""Advance one step with first-order upwind space and forward Euler time."""
+"""風上差分と陽Euler法で1ステップ進める。"""
 function upwind_step!(u_new, u_old, c::Real, dt::Real, dx::Real)
     validate_step_inputs(u_new, u_old, c, dt, dx)
     courant = c * dt / dx
     copyto!(u_new, u_old)
     for i in 2:(length(u_old) - 1)
-        # TODO(N01): subtract courant times the backward difference in u.
+        # TODO(N01): 風上差分と陽Eulerによる更新式を実装する。
         u_new[i] = u_old[i]
     end
     return u_new
 end
 
-"""Advance one intentionally unstable step with centered space and Euler time."""
+"""意図的に不安定な中心差分と陽Euler法で1ステップ進める。"""
 function centered_step!(u_new, u_old, c::Real, dt::Real, dx::Real)
     validate_step_inputs(u_new, u_old, c, dt, dx)
     courant = c * dt / dx
     copyto!(u_new, u_old)
     for i in 2:(length(u_old) - 1)
-        # TODO(N01): subtract courant times the centered difference in u.
+        # TODO(N01): 中心差分と陽Eulerによる更新式を実装する。
         u_new[i] = u_old[i]
     end
     return u_new
 end
 
-"""Run one N01 scheme and return the initial and final fields plus diagnostics."""
+# === 境界条件と時間発展の流れ ===
+
+"""左端を固定値、右端をゼロ勾配条件にする。"""
+function apply_boundary!(u::AbstractVector{<:Real}; left_value::Real = 1.0)
+    length(u) >= 2 || throw(ArgumentError("uには2点以上が必要です"))
+    isfinite(left_value) || throw(ArgumentError("left_valueを有限値にしてください"))
+    u[1] = left_value
+    u[end] = u[end - 1]
+    return u
+end
+
+"""指定したN01の差分法を実行し、初期値・最終値・診断量を返す。"""
 function simulate(;
     scheme,
     nx::Integer = 81,
@@ -82,14 +74,14 @@ function simulate(;
     t_final::Real = 0.5,
 )
     scheme in (:upwind, :centered) ||
-        throw(ArgumentError("scheme must be :upwind or :centered"))
-    nx isa Bool && throw(ArgumentError("nx must be an integer point count"))
-    nx >= 3 || throw(ArgumentError("nx must be at least 3"))
+        throw(ArgumentError("schemeには:upwindまたは:centeredを指定してください"))
+    nx isa Bool && throw(ArgumentError("nxには格子点数を表す整数を指定してください"))
+    nx >= 3 || throw(ArgumentError("nxは3以上にしてください"))
     all(isfinite, (c, cfl, t_final)) ||
-        throw(ArgumentError("c, cfl, and t_final must be finite"))
-    c > 0 || throw(ArgumentError("N01 supports only positive advection speed"))
-    0 < cfl <= 1 || throw(ArgumentError("cfl must satisfy 0 < cfl <= 1"))
-    t_final > 0 || throw(ArgumentError("t_final must be positive"))
+        throw(ArgumentError("c、cfl、t_finalを有限値にしてください"))
+    c > 0 || throw(ArgumentError("N01では正の移流速度だけを扱います"))
+    0 < cfl <= 1 || throw(ArgumentError("cflは0 < cfl <= 1を満たす必要があります"))
+    t_final > 0 || throw(ArgumentError("t_finalは正にしてください"))
 
     x = collect(range(0.0, 2.0; length = nx))
     dx = x[2] - x[1]
@@ -103,6 +95,7 @@ function simulate(;
     u_new = similar(u_old)
     step! = scheme === :upwind ? upwind_step! : centered_step!
 
+    # 各ステップで新しい値を計算し、境界条件を適用してから二つのバッファを交換する。
     for _ in 1:steps
         step!(u_new, u_old, c, dt, dx)
         apply_boundary!(u_new)
@@ -122,6 +115,23 @@ function simulate(;
     )
 end
 
+# === 提供済みの検証・出力処理 ===
+# ここから下の詳細な入力検証、TOML出力、作図、実行処理は提供済みです。
+
+"""1ステップ分の入力が計算条件を満たすか確認する。"""
+function validate_step_inputs(u_new, u_old, c, dt, dx)
+    u_new === u_old && throw(ArgumentError("新旧で別々のバッファを使ってください"))
+    length(u_new) == length(u_old) >= 3 ||
+        throw(ArgumentError("二つのバッファを同じ長さの3点以上にしてください"))
+    all(isfinite, u_old) || throw(ArgumentError("u_oldの全要素を有限値にしてください"))
+    all(isfinite, (c, dt, dx)) || throw(ArgumentError("c、dt、dxを有限値にしてください"))
+    c > 0 || throw(ArgumentError("N01では正の移流速度だけを扱います"))
+    dt > 0 || throw(ArgumentError("dtは正にしてください"))
+    dx > 0 || throw(ArgumentError("dxは正にしてください"))
+    return nothing
+end
+
+"""一つの差分法についてTOMLへ書き出す診断量を作る。"""
 function summary_section(scheme::String, result)
     initial_minimum, initial_maximum = extrema(result.u0)
     overshoot = max(result.maximum - initial_maximum, 0.0)
@@ -143,7 +153,7 @@ function summary_section(scheme::String, result)
     )
 end
 
-"""Write machine-readable diagnostics and return the summary path."""
+"""機械可読な診断量を書き出し、summary.tomlのパスを返す。"""
 function write_summary(output_dir::AbstractString, upwind, centered)
     mkpath(output_dir)
     path = joinpath(output_dir, "summary.toml")
@@ -159,7 +169,7 @@ function write_summary(output_dir::AbstractString, upwind, centered)
     return path
 end
 
-"""Create the two official comparison plots and return their paths."""
+"""公式の比較図を二つ作り、それぞれのパスを返す。"""
 function make_plots(output_dir::AbstractString, upwind, centered)
     mkpath(output_dir)
     upwind_path = joinpath(output_dir, "upwind.png")
@@ -184,7 +194,7 @@ function make_plots(output_dir::AbstractString, upwind, centered)
     return (upwind = upwind_path, centered = centered_path)
 end
 
-"""Run both N01 comparisons and write all official outputs."""
+"""N01の二つの比較計算を実行し、公式出力をすべて書き出す。"""
 function main(;
     output_dir::AbstractString = DEFAULT_OUTPUT_DIR,
     nx::Integer = 81,
@@ -196,7 +206,7 @@ function main(;
     centered = simulate(; scheme = :centered, nx, c, cfl, t_final)
     summary_path = write_summary(output_dir, upwind, centered)
     plot_paths = make_plots(output_dir, upwind, centered)
-    println("N01 outputs written to $(abspath(output_dir))")
+    println("N01の出力を書き込みました: $(abspath(output_dir))")
     return (; upwind, centered, summary_path, plot_paths)
 end
 

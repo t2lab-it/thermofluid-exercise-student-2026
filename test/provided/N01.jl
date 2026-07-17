@@ -16,6 +16,43 @@ const N01_LOG = joinpath(N01_ROOT, "learning_logs", "templates", "N01.md")
         source = read(N01_RUN, String)
         @test !occursin("ThermofluidExercise", source)
         @test !occursin("Vector{Vector", source)
+        section_markers = (
+            "# === 学生が実装する3つの関数 ===",
+            "# === 境界条件と時間発展の流れ ===",
+            "# === 提供済みの検証・出力処理 ===",
+        )
+        @test count("# ===", source) == length(section_markers)
+        marker_positions = map(marker -> findfirst(marker, source), section_markers)
+        @test all(!isnothing, marker_positions)
+        if all(!isnothing, marker_positions)
+            @test issorted(map(first, marker_positions))
+        end
+        @test count("TODO(N01)", source) == 3
+        for marker in (
+            "# TODO(N01): 矩形状の初期分布を実装する。",
+            "# TODO(N01): 風上差分と陽Eulerによる更新式を実装する。",
+            "# TODO(N01): 中心差分と陽Eulerによる更新式を実装する。",
+        )
+            @test count(marker, source) == 1
+        end
+        for function_name in (
+            "rectangular_initial_condition", "upwind_step!", "centered_step!",
+        )
+            function_position = findfirst("function $function_name", source)
+            @test !isnothing(function_position)
+            if !isnothing(function_position)
+                context_start = thisind(source, max(first(function_position) - 240, firstindex(source)))
+                context = source[context_start:prevind(source, first(function_position))]
+                @test occursin(r"[ぁ-んァ-ヶ一-龠]", context)
+            end
+        end
+        for english_docstring in (
+            "Return the rectangular pulse used by the N01 advection experiment.",
+            "Advance one step with first-order upwind space and forward Euler time.",
+            "Advance one intentionally unstable step with centered space and Euler time.",
+        )
+            @test !occursin(english_docstring, source)
+        end
         for name in (
             :rectangular_initial_condition, :apply_boundary!, :upwind_step!, :centered_step!,
             :simulate, :write_summary, :make_plots, :main,
@@ -149,7 +186,17 @@ const N01_LOG = joinpath(N01_ROOT, "learning_logs", "templates", "N01.md")
         @test occursin("results/N01/summary.toml", task)
         @test occursin("デバッグ補助", task)
         @test occursin("秘密", task)
+        @test occursin("出力処理は提供済み", task)
+        @test occursin("時間ループ", task) && occursin("バッファ交換", task)
+        @test occursin("詳細な入力検証", task) && occursin("提供済み", task)
         @test !occursin("CairoMakie", task)
     end
     @test isfile(N01_LOG)
+    if isfile(N01_LOG)
+        learning_log = read(N01_LOG, String)
+        @test occursin("入力", learning_log)
+        @test occursin("期待値", learning_log)
+        @test occursin("保証すること", learning_log)
+        @test occursin("保証しないこと", learning_log)
+    end
 end
