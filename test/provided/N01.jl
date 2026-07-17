@@ -48,34 +48,78 @@ function n01_in_place_destination(node)
     return nothing
 end
 
-function n01_mark_in_place_results!(provenance, node)
+function n01_mark_in_place_results!(numerical, expected, node)
     node isa Expr || return nothing
     node.head in (:quote, :inert, :function, :macro, :->) && return nothing
 
     if node.head == :if && first(node.args) === false
-        length(node.args) >= 3 && n01_mark_in_place_results!(provenance, node.args[3])
+        length(node.args) >= 3 &&
+            n01_mark_in_place_results!(numerical, expected, node.args[3])
         return nothing
     end
 
     destination = n01_in_place_destination(node)
-    isnothing(destination) || push!(provenance, destination)
-    foreach(child -> n01_mark_in_place_results!(provenance, child), node.args)
+    if !isnothing(destination)
+        delete!(expected, destination)
+        push!(numerical, destination)
+    end
+    foreach(child -> n01_mark_in_place_results!(numerical, expected, child), node.args)
     return nothing
 end
 
-function n01_assertion_uses_numerical_result(assertion, provenance)
-    assertion isa Bool && return false
-    n01_ast_contains(n01_numerical_call, assertion) && return true
-    return n01_ast_contains(node -> node in provenance, assertion)
+function n01_comparison_operands(assertion)
+    assertion isa Expr && assertion.head == :call || return nothing
+    comparator = first(assertion.args)
+    comparator in (:(==), :≈, :isapprox) || return nothing
+    operands = filter(
+        argument -> !(argument isa LineNumberNode) &&
+            !(argument isa Expr && argument.head == :parameters),
+        assertion.args[2:end],
+    )
+    length(operands) == 2 || return nothing
+    return operands[1], operands[2]
 end
 
-function n01_analyze_test_statements!(provenance, has_meaningful_test, node)
+function n01_uses_numerical_result(node, numerical)
+    n01_ast_contains(n01_numerical_call, node) && return true
+    return n01_ast_contains(
+        candidate -> candidate isa Symbol && candidate in numerical,
+        node,
+    )
+end
+
+function n01_uses_independent_expected(node, numerical, expected)
+    n01_uses_numerical_result(node, numerical) && return false
+    return n01_ast_contains(
+        candidate ->
+            (candidate isa Number && !(candidate isa Bool)) ||
+            (candidate isa Symbol && candidate in expected),
+        node,
+    )
+end
+
+function n01_assertion_compares_numerical_result(assertion, numerical, expected)
+    operands = n01_comparison_operands(assertion)
+    isnothing(operands) && return false
+    left, right = operands
+    isequal(left, right) && return false
+
+    left_numerical = n01_uses_numerical_result(left, numerical)
+    right_numerical = n01_uses_numerical_result(right, numerical)
+    left_expected = n01_uses_independent_expected(left, numerical, expected)
+    right_expected = n01_uses_independent_expected(right, numerical, expected)
+    return (
+        (left_numerical && !right_numerical && right_expected) ||
+        (right_numerical && !left_numerical && left_expected))
+end
+
+function n01_analyze_test_statements!(numerical, expected, has_meaningful_test, node)
     node isa Expr || return nothing
     node.head in (:quote, :inert, :function, :macro, :->) && return nothing
 
     if node.head in (:toplevel, :block)
         for child in node.args
-            n01_analyze_test_statements!(provenance, has_meaningful_test, child)
+            n01_analyze_test_statements!(numerical, expected, has_meaningful_test, child)
         end
         return nothing
     end
@@ -83,8 +127,8 @@ function n01_analyze_test_statements!(provenance, has_meaningful_test, node)
     assertion = n01_test_assertion(node)
     if !isnothing(assertion)
         has_meaningful_test[] |=
-            n01_assertion_uses_numerical_result(assertion, provenance)
-        n01_mark_in_place_results!(provenance, assertion)
+            n01_assertion_compares_numerical_result(assertion, numerical, expected)
+        n01_mark_in_place_results!(numerical, expected, assertion)
         return nothing
     end
 
@@ -92,7 +136,7 @@ function n01_analyze_test_statements!(provenance, has_meaningful_test, node)
         if first(node.args) == Symbol("@testset")
             for child in node.args
                 child isa Expr && child.head in (:toplevel, :block) || continue
-                n01_analyze_test_statements!(provenance, has_meaningful_test, child)
+                n01_analyze_test_statements!(numerical, expected, has_meaningful_test, child)
             end
         end
         return nothing
@@ -100,15 +144,21 @@ function n01_analyze_test_statements!(provenance, has_meaningful_test, node)
 
     if node.head == :(=) && length(node.args) == 2
         variable, value = node.args
-        variable isa Symbol && delete!(provenance, variable)
-        n01_mark_in_place_results!(provenance, value)
-        if variable isa Symbol && n01_ast_contains(n01_numerical_call, value)
-            push!(provenance, variable)
+        value_is_numerical = n01_uses_numerical_result(value, numerical)
+        value_is_expected =
+            !value_is_numerical &&
+            n01_uses_independent_expected(value, numerical, expected)
+        if variable isa Symbol
+            delete!(numerical, variable)
+            delete!(expected, variable)
+            value_is_numerical && push!(numerical, variable)
+            value_is_expected && push!(expected, variable)
         end
+        n01_mark_in_place_results!(numerical, expected, value)
         return nothing
     end
 
-    n01_mark_in_place_results!(provenance, node)
+    n01_mark_in_place_results!(numerical, expected, node)
     return nothing
 end
 
@@ -121,9 +171,10 @@ function n01_student_test_state(source)
 
     scaffold_marker = "STUDENT_TEST_REQUIRED(N01)"
     has_literal_false = n01_ast_contains(node -> n01_test_assertion(node) === false, parsed)
-    provenance = Set{Symbol}()
+    numerical = Set{Symbol}()
+    expected = Set{Symbol}()
     has_meaningful_test = Ref(false)
-    n01_analyze_test_statements!(provenance, has_meaningful_test, parsed)
+    n01_analyze_test_statements!(numerical, expected, has_meaningful_test, parsed)
 
     is_scaffold = occursin(scaffold_marker, source) && has_literal_false
     is_completed =
@@ -203,6 +254,31 @@ end
             end
             @test u_new[2] == 2.0
             """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            @test result.minimum == result.minimum
+            """,
+            """
+            @test N01LinearAdvection.simulate(; scheme=:upwind).minimum ==
+                N01LinearAdvection.simulate(; scheme=:upwind).minimum
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            expected = result.minimum
+            @test result.minimum == expected
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            @test result.minimum == identity(result.minimum)
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            @test result.minimum >= -Inf
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            @test result.minimum <= 1.0e99
+            """,
             "result = N01LinearAdvection.simulate(",
         )
             rejected = n01_student_test_state(rejected_source)
@@ -211,17 +287,43 @@ end
         end
 
         direct_assertion = n01_student_test_state("""
-            @test N01LinearAdvection.simulate(; scheme=:upwind).minimum >= 1.0
+            @test N01LinearAdvection.simulate(; scheme=:upwind).minimum == 1.0
         """)
         @test !direct_assertion.is_scaffold
         @test direct_assertion.is_completed
 
         assigned_result = n01_student_test_state("""
             result = N01LinearAdvection.simulate(; scheme=:upwind)
-            @test result.minimum >= 1.0
+            @test result.minimum == 1.0
         """)
         @test !assigned_result.is_scaffold
         @test assigned_result.is_completed
+
+        assigned_expected = n01_student_test_state("""
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            expected = 1.0
+            @test result.minimum == expected
+        """)
+        @test !assigned_expected.is_scaffold
+        @test assigned_expected.is_completed
+
+        rectangular_vector = n01_student_test_state("""
+            x = collect(range(0.0, 2.0; length=5))
+            @test N01LinearAdvection.rectangular_initial_condition(x) ==
+                [1.0, 2.0, 2.0, 1.0, 1.0]
+        """)
+        @test !rectangular_vector.is_scaffold
+        @test rectangular_vector.is_completed
+
+        hand_computed_expected = n01_student_test_state("""
+            u_old = [1.0, 2.0, 4.0, 8.0]
+            u_new = similar(u_old)
+            expected = u_old[2] - 0.5 * (u_old[2] - u_old[1])
+            N01LinearAdvection.upwind_step!(u_new, u_old, 1.0, 0.25, 0.5)
+            @test u_new[2] == expected
+        """)
+        @test !hand_computed_expected.is_scaffold
+        @test hand_computed_expected.is_completed
 
         upwind_in_place = n01_student_test_state("""
             u_old = [1.0, 2.0, 4.0, 8.0]
