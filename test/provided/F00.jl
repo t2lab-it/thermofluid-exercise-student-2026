@@ -187,6 +187,7 @@ end
             @test occursin("Julia拡張", task)
             @test occursin("Pkg.instantiate", task)
             @test occursin("scratch", lowercase(task))
+            @test occursin("scratch/F00-agent-check.txt", task)
             @test occursin("削除", task)
             @test occursin("追跡", task)
             @test occursin("秘密", task)
