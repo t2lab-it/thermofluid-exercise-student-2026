@@ -1,7 +1,9 @@
 include(joinpath(@__DIR__, "lib", "CourseWorkflow.jl"))
 include(joinpath(@__DIR__, "lib", "ResultLimits.jl"))
+include(joinpath(@__DIR__, "..", "exercises", "F00_environment", "run.jl"))
 
 using .CourseWorkflow
+using .F00Environment
 using .ResultLimits
 
 const SLUGS = Dict(
@@ -21,7 +23,7 @@ const SLUGS = Dict(
 
 const USAGE = """
 Usage:
-  julia --project=. $(joinpath("scripts", "course.jl")) preflight
+  julia --project=. $(joinpath("scripts", "course.jl")) preflight [--confirm-github --confirm-agent <copilot|codex|amazon-q>]
   julia --project=. $(joinpath("scripts", "course.jl")) start <ID>
   julia --project=. $(joinpath("scripts", "course.jl")) status
   julia --project=. $(joinpath("scripts", "course.jl")) check-results
@@ -105,16 +107,30 @@ function start_exercise(root, id; persist_progress=save_progress)
     println("Then open a pull request for $branch in your hosting service.")
 end
 
-function main(arguments=ARGS; root=pwd())
+function main(
+    arguments=ARGS;
+    root=pwd(),
+    preflight_report=nothing,
+    preflight_collector=collect_preflight,
+    persist_progress=save_progress,
+    io=stdout,
+)
     if arguments == ["--help"] || arguments == ["-h"] || isempty(arguments)
         print(USAGE)
         return 0
     end
 
     command = first(arguments)
-    if command == "preflight" && length(arguments) == 1
-        require_preflight(root)
-        println("Preflight passed: main is clean and all operations remain local.")
+    if command == "preflight"
+        confirmations = parse_preflight_arguments(arguments[2:end])
+        report = isnothing(preflight_report) ? preflight_collector() : preflight_report
+        run_f00_preflight(
+            root;
+            report,
+            persist_progress,
+            io,
+            confirmations...,
+        )
     elseif command == "status" && length(arguments) == 1
         show_status(root)
     elseif command == "check-results" && length(arguments) == 1
