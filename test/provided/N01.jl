@@ -71,6 +71,14 @@ const N01_LOG = joinpath(N01_ROOT, "learning_logs", "templates", "N01.md")
         adjusted = N01.simulate(; scheme=:upwind, nx=20, c=1.0, cfl=0.6, t_final=0.37)
         @test isapprox(adjusted.dt * adjusted.steps, 0.37; atol=100eps())
         @test adjusted.cfl <= 0.6 + 100eps()
+        nonunit_speed = N01.simulate(;
+            scheme=:upwind, nx=31, c=2.0, cfl=0.55, t_final=0.17,
+        )
+        @test isapprox(
+            nonunit_speed.cfl,
+            2.0 * nonunit_speed.dt / nonunit_speed.dx;
+            atol=100eps(),
+        )
 
         for arguments in (
             (; scheme=:unknown), (; scheme=:upwind, nx=2), (; scheme=:upwind, c=0.0),
@@ -82,25 +90,49 @@ const N01_LOG = joinpath(N01_ROOT, "learning_logs", "templates", "N01.md")
         @test_throws ArgumentError N01.upwind_step!(old, old, 1.0, 0.1, 0.2)
         @test_throws ArgumentError N01.centered_step!(old, old, 1.0, 0.1, 0.2)
 
-        output_dir = mktempdir()
-        outputs = N01.main(; output_dir, nx=21, c=1.0, cfl=0.5, t_final=0.1)
-        @test outputs.summary_path == joinpath(output_dir, "summary.toml")
-        @test outputs.plot_paths.upwind == joinpath(output_dir, "upwind.png")
-        @test outputs.plot_paths.centered == joinpath(output_dir, "centered-euler.png")
-        for path in (outputs.summary_path, outputs.plot_paths.upwind, outputs.plot_paths.centered)
-            @test isfile(path)
-            @test filesize(path) <= 5 * 1024^2
-        end
-        @test sum(filesize, readdir(output_dir; join=true)) <= 10 * 1024^2
-        summary = TOML.parsefile(outputs.summary_path)
-        @test Set(keys(summary)) == Set(["course_id", "grid", "upwind", "centered_euler"])
-        @test summary["course_id"] == "N01"
-        @test summary["grid"]["nx"] == 21
-        for section in ("upwind", "centered_euler")
-            @test all(key -> haskey(summary[section], key), [
-                "scheme", "cfl", "dt", "steps", "minimum", "maximum",
-                "overshoot", "undershoot",
-            ])
+        mktempdir() do output_dir
+            outputs = N01.main(; output_dir, nx=21, c=1.0, cfl=0.5, t_final=0.1)
+            @test outputs.summary_path == joinpath(output_dir, "summary.toml")
+            @test outputs.plot_paths.upwind == joinpath(output_dir, "upwind.png")
+            @test outputs.plot_paths.centered == joinpath(output_dir, "centered-euler.png")
+            paths = (outputs.summary_path, outputs.plot_paths.upwind, outputs.plot_paths.centered)
+            for path in paths
+                @test isfile(path)
+                @test 0 < filesize(path) <= 5 * 1024^2
+            end
+            png_signature = UInt8[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
+            for path in (outputs.plot_paths.upwind, outputs.plot_paths.centered)
+                @test open(io -> read(io, 8), path) == png_signature
+            end
+            @test sum(filesize, readdir(output_dir; join=true)) <= 10 * 1024^2
+
+            summary = TOML.parsefile(outputs.summary_path)
+            @test Set(keys(summary)) == Set(["course_id", "grid", "upwind", "centered_euler"])
+            @test summary["course_id"] == "N01"
+            @test summary["grid"]["nx"] == length(outputs.upwind.x) == 21
+            @test summary["grid"]["dx"] == outputs.upwind.dx
+            for (section, scheme, result) in (
+                ("upwind", "upwind-euler", outputs.upwind),
+                ("centered_euler", "centered-euler", outputs.centered),
+            )
+                parsed = summary[section]
+                @test parsed["scheme"] == scheme
+                @test parsed["cfl"] == result.cfl
+                @test parsed["dt"] == result.dt
+                @test parsed["steps"] == result.steps
+                @test parsed["minimum"] == result.minimum
+                @test parsed["maximum"] == result.maximum
+                initial_minimum, initial_maximum = extrema(result.u0)
+                overshoot = max(result.maximum - initial_maximum, 0.0)
+                undershoot = max(initial_minimum - result.minimum, 0.0)
+                tolerance = 100eps(Float64) * max(
+                    abs(initial_minimum), abs(initial_maximum), 1.0,
+                )
+                @test parsed["overshoot"] == overshoot
+                @test parsed["undershoot"] == undershoot
+                @test parsed["overshoot_occurred"] == (overshoot > tolerance)
+                @test parsed["undershoot_occurred"] == (undershoot > tolerance)
+            end
         end
     end
 

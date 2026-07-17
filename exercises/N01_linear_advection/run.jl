@@ -123,6 +123,12 @@ function simulate(;
 end
 
 function summary_section(scheme::String, result)
+    initial_minimum, initial_maximum = extrema(result.u0)
+    overshoot = max(result.maximum - initial_maximum, 0.0)
+    undershoot = max(initial_minimum - result.minimum, 0.0)
+    tolerance = 100eps(Float64) * max(
+        abs(initial_minimum), abs(initial_maximum), 1.0,
+    )
     return Dict(
         "scheme" => scheme,
         "cfl" => result.cfl,
@@ -130,8 +136,10 @@ function summary_section(scheme::String, result)
         "steps" => result.steps,
         "minimum" => result.minimum,
         "maximum" => result.maximum,
-        "overshoot" => max(result.maximum - 2.0, 0.0),
-        "undershoot" => max(1.0 - result.minimum, 0.0),
+        "overshoot" => overshoot,
+        "undershoot" => undershoot,
+        "overshoot_occurred" => overshoot > tolerance,
+        "undershoot_occurred" => undershoot > tolerance,
     )
 end
 
