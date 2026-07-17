@@ -43,8 +43,7 @@ function n01_in_place_destination(node)
     for argument in Iterators.drop(node.args, 1)
         argument isa LineNumberNode && continue
         argument isa Expr && argument.head == :parameters && continue
-        return argument isa Symbol || (argument isa Expr && argument.head == :ref) ?
-               argument : nothing
+        return argument isa Symbol ? argument : nothing
     end
     return nothing
 end
@@ -52,6 +51,11 @@ end
 function n01_mark_in_place_results!(provenance, node)
     node isa Expr || return nothing
     node.head in (:quote, :inert, :function, :macro, :->) && return nothing
+
+    if node.head == :if && first(node.args) === false
+        length(node.args) >= 3 && n01_mark_in_place_results!(provenance, node.args[3])
+        return nothing
+    end
 
     destination = n01_in_place_destination(node)
     isnothing(destination) || push!(provenance, destination)
@@ -117,7 +121,7 @@ function n01_student_test_state(source)
 
     scaffold_marker = "STUDENT_TEST_REQUIRED(N01)"
     has_literal_false = n01_ast_contains(node -> n01_test_assertion(node) === false, parsed)
-    provenance = Set{Any}()
+    provenance = Set{Symbol}()
     has_meaningful_test = Ref(false)
     n01_analyze_test_statements!(provenance, has_meaningful_test, parsed)
 
@@ -170,6 +174,34 @@ end
             result = N01LinearAdvection.simulate(; scheme=:upwind)
             result = 1
             @test result == 1
+            """,
+            """
+            u_old = [1.0, 2.0, 4.0, 8.0]
+            buffers = [similar(u_old)]
+            N01LinearAdvection.upwind_step!(
+                buffers[1], u_old, 1.0, 0.25, 0.5,
+            )
+            buffers[1] = fill(9.0, 4)
+            @test buffers[1][2] == 9.0
+            """,
+            """
+            u_old = [1.0, 2.0, 4.0, 8.0]
+            buffers = [similar(u_old)]
+            N01LinearAdvection.upwind_step!(
+                buffers[1], u_old, 1.0, 0.25, 0.5,
+            )
+            buffers = [fill(9.0, 4)]
+            @test buffers[1][2] == 9.0
+            """,
+            """
+            u_old = [1.0, 2.0, 4.0, 8.0]
+            u_new = similar(u_old)
+            if false
+                N01LinearAdvection.upwind_step!(
+                    u_new, u_old, 1.0, 0.25, 0.5,
+                )
+            end
+            @test u_new[2] == 2.0
             """,
             "result = N01LinearAdvection.simulate(",
         )
