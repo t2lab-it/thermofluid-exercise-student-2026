@@ -10,7 +10,7 @@
 - 自分のGitHubアカウントで課題リポジトリを開ける。
 - 正式対応Agentのうち、GitHub Copilot、OpenAI Codex、Amazon Q Developerのいずれか一つで、ファイル編集とローカルコマンド実行を確認する。
 
-F00ではファイルを編集せず、branch、commit、push、PR、学習ログを作りません。
+F00では追跡対象の課題ファイルや提出物を編集せず、branch、commit、push、PR、学習ログを作りません。Agentの動作確認に使う一時ファイルは`scratch/`へ置き、確認後に削除します。
 
 ## 1. Juliaを固定する
 
@@ -52,6 +52,8 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 ## 4. 手動確認を付けて完了する
 
 GitHubへサインインして課題リポジトリを開けることを確認します。次に、正式対応Agentを一つだけ選び、VS Code内またはCodex CLIでファイル編集と安全なローカルコマンド実行を確認します。Copilotが利用できない場合はCodexまたはAmazon Qへ切り替えて構いません。
+
+選んだAgentへ、`scratch/F00_agent_check.txt`の作成と短い確認文の追記、その内容を表示する安全なローカルコマンドの実行を依頼してください。結果を自分で確認したら、この一時ファイルを削除します。追跡対象のファイルはAgentに編集させません。
 
 選んだ製品名に応じて、次のいずれか一つを実行します。
 

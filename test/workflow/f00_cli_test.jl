@@ -11,6 +11,25 @@ function passing_preflight_report()
     )
 end
 
+function failing_preflight_report()
+    PreflightReport(
+        ObservedCheck(:julia, true, "1.12.6", ""),
+        ObservedCheck(:git, false, "git not found", "Install Git"),
+        ObservedCheck(:vscode, false, "code not found", "Install VS Code"),
+    )
+end
+
+function f00_command_result(command)
+    stdout = IOBuffer()
+    stderr = IOBuffer()
+    process = run(pipeline(ignorestatus(command), stdout=stdout, stderr=stderr))
+    (
+        exitcode=process.exitcode,
+        stdout=String(take!(stdout)),
+        stderr=String(take!(stderr)),
+    )
+end
+
 function f00_cli_root()
     root = mktempdir()
     save_progress(
@@ -36,6 +55,26 @@ end
         persist_progress=persist,
         io=output,
     ) == 0
+    @test writes[] == 0
+    @test load_progress(joinpath(root, "course_progress.toml")).current == "F00"
+
+    @test main(
+        ["preflight", "--confirm-github"];
+        root,
+        preflight_report=passing_preflight_report(),
+        persist_progress=persist,
+        io=IOBuffer(),
+    ) != 0
+    @test writes[] == 0
+    @test load_progress(joinpath(root, "course_progress.toml")).current == "F00"
+
+    @test main(
+        ["preflight", "--confirm-github", "--confirm-agent", "codex"];
+        root,
+        preflight_report=failing_preflight_report(),
+        persist_progress=persist,
+        io=IOBuffer(),
+    ) != 0
     @test writes[] == 0
     @test load_progress(joinpath(root, "course_progress.toml")).current == "F00"
 
@@ -78,5 +117,27 @@ end
             io=IOBuffer(),
         ) == 0
         @test calls[] == 1
+    end
+
+    @testset "real process rejects a confirmed completion attempt when probes fail" begin
+        process_root = f00_cli_root()
+        progress_path = joinpath(process_root, "course_progress.toml")
+        before = read(progress_path, String)
+        empty_path = mktempdir()
+        command = Cmd(Cmd([
+            Base.julia_cmd().exec...,
+            "--startup-file=no",
+            "--project=$F00_CLI_ROOT",
+            joinpath(F00_CLI_ROOT, "scripts", "course.jl"),
+            "preflight",
+            "--confirm-github",
+            "--confirm-agent",
+            "codex",
+        ]); dir=process_root)
+        result = f00_command_result(addenv(command, "PATH" => empty_path))
+        @test result.exitcode != 0
+        @test occursin("NEEDS SETUP", result.stdout)
+        @test occursin("Progress was not updated", result.stdout)
+        @test read(progress_path, String) == before
     end
 end

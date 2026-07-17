@@ -124,13 +124,15 @@ function main(
     if command == "preflight"
         confirmations = parse_preflight_arguments(arguments[2:end])
         report = isnothing(preflight_report) ? preflight_collector() : preflight_report
-        run_f00_preflight(
+        completed = run_f00_preflight(
             root;
             report,
             persist_progress,
             io,
             confirmations...,
         )
+        attempted_completion = length(arguments) > 1
+        return attempted_completion && !completed ? 1 : 0
     elseif command == "status" && length(arguments) == 1
         show_status(root)
     elseif command == "check-results" && length(arguments) == 1
