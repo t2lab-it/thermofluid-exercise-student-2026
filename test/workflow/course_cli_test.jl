@@ -98,6 +98,16 @@ function install_git_recorder(; windows=Sys.iswindows())
     (bin=bin, log=log, wrapper=wrapper)
 end
 
+select_native_recorder(unix_recorder, windows_recorder; windows=Sys.iswindows()) =
+    windows ? windows_recorder : unix_recorder
+
+function recorder_command(recorder, arguments; windows=Sys.iswindows())
+    if windows
+        return Cmd(["cmd.exe", "/c", recorder.wrapper, arguments...])
+    end
+    Cmd([recorder.wrapper, arguments...])
+end
+
 function run_course(repo, arguments)
     recorder = install_git_recorder()
     command = `$(Base.julia_cmd()) --startup-file=no --project=$repo $COURSE_SCRIPT $(arguments)`
@@ -217,15 +227,37 @@ if get(ENV, "COURSE_SELECTION_PROBE_CHILD", "0") != "1"
         @test !isnothing(unix_recorder)
         @test !isnothing(windows_recorder)
         if !isnothing(unix_recorder) && !isnothing(windows_recorder)
+            selected_unix = try
+                select_native_recorder(unix_recorder, windows_recorder; windows=false)
+            catch
+                nothing
+            end
+            selected_windows = try
+                select_native_recorder(unix_recorder, windows_recorder; windows=true)
+            catch
+                nothing
+            end
+            @test !isnothing(selected_unix)
+            @test !isnothing(selected_windows)
+            if !isnothing(selected_unix) && !isnothing(selected_windows)
+                @test selected_unix.wrapper == unix_recorder.wrapper
+                @test selected_windows.wrapper == windows_recorder.wrapper
+                unix_command = recorder_command(selected_unix, ["-C", "repo", "merge"]; windows=false)
+                windows_command = recorder_command(selected_windows, ["-C", "repo", "merge"]; windows=true)
+                @test first(unix_command.exec) == unix_recorder.wrapper
+                @test lowercase(basename(first(windows_command.exec))) in ("cmd", "cmd.exe")
+                @test "/c" in lowercase.(windows_command.exec)
+            end
             @test endswith(unix_recorder.wrapper, "git")
             @test endswith(windows_recorder.wrapper, "git.cmd")
             @test occursin("#!/bin/sh", read(unix_recorder.wrapper, String))
             @test occursin("@echo off", lowercase(read(windows_recorder.wrapper, String)))
+            native_recorder = select_native_recorder(unix_recorder, windows_recorder)
             for verb in ("pull", "push", "fetch", "clone", "remote", "merge")
                 @test occursin(verb, read(unix_recorder.wrapper, String))
                 @test occursin(verb, read(windows_recorder.wrapper, String))
-                command = Cmd([unix_recorder.wrapper, "-C", make_course_repo(), verb])
-                result = command_result(addenv(command, "COURSE_GIT_LOG" => unix_recorder.log))
+                command = recorder_command(native_recorder, ["-C", make_course_repo(), verb])
+                result = command_result(addenv(command, "COURSE_GIT_LOG" => native_recorder.log))
                 @test result.exitcode == 97
             end
         end
