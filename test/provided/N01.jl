@@ -20,15 +20,17 @@ function n01_ast_contains(predicate, node)
     return any(child -> n01_ast_contains(predicate, child), node.args)
 end
 
-function n01_numerical_call(node)
-    node isa Expr && node.head == :call || return false
+function n01_numerical_call_name(node)
+    node isa Expr && node.head == :call || return nothing
     callee = first(node.args)
-    callee isa Expr && callee.head == :. && length(callee.args) == 2 || return false
+    callee isa Expr && callee.head == :. && length(callee.args) == 2 || return nothing
     module_name, quoted_name = callee.args
-    return module_name == :N01LinearAdvection &&
-           quoted_name isa QuoteNode &&
-           quoted_name.value in N01_NUMERICAL_FUNCTIONS
+    module_name == :N01LinearAdvection || return nothing
+    quoted_name isa QuoteNode || return nothing
+    return quoted_name.value in N01_NUMERICAL_FUNCTIONS ? quoted_name.value : nothing
 end
+
+n01_numerical_call(node) = !isnothing(n01_numerical_call_name(node))
 
 function n01_test_assertion(node)
     node isa Expr && node.head == :macrocall && length(node.args) >= 3 || return nothing
@@ -36,29 +38,74 @@ function n01_test_assertion(node)
     return node.args[3]
 end
 
-function n01_collect_test_evidence!(assigned_results, assertions, node)
-    node isa Expr || return nothing
-    node.head in (:quote, :inert, :function, :macro, :->) && return nothing
-
-    if node.head == :(=) && length(node.args) == 2
-        variable, value = node.args
-        if variable isa Symbol && n01_ast_contains(n01_numerical_call, value)
-            push!(assigned_results, variable)
-        end
+function n01_in_place_destination(node)
+    n01_numerical_call_name(node) in (:upwind_step!, :centered_step!) || return nothing
+    for argument in Iterators.drop(node.args, 1)
+        argument isa LineNumberNode && continue
+        argument isa Expr && argument.head == :parameters && continue
+        return argument isa Symbol || (argument isa Expr && argument.head == :ref) ?
+               argument : nothing
     end
-
-    assertion = n01_test_assertion(node)
-    isnothing(assertion) || push!(assertions, assertion)
-    foreach(child -> n01_collect_test_evidence!(assigned_results, assertions, child), node.args)
     return nothing
 end
 
-function n01_assertion_uses_numerical_result(assertion, assigned_results)
+function n01_mark_in_place_results!(provenance, node)
+    node isa Expr || return nothing
+    node.head in (:quote, :inert, :function, :macro, :->) && return nothing
+
+    destination = n01_in_place_destination(node)
+    isnothing(destination) || push!(provenance, destination)
+    foreach(child -> n01_mark_in_place_results!(provenance, child), node.args)
+    return nothing
+end
+
+function n01_assertion_uses_numerical_result(assertion, provenance)
     assertion isa Bool && return false
     n01_ast_contains(n01_numerical_call, assertion) && return true
-    return n01_ast_contains(assertion) do node
-        node isa Symbol && node in assigned_results
+    return n01_ast_contains(node -> node in provenance, assertion)
+end
+
+function n01_analyze_test_statements!(provenance, has_meaningful_test, node)
+    node isa Expr || return nothing
+    node.head in (:quote, :inert, :function, :macro, :->) && return nothing
+
+    if node.head in (:toplevel, :block)
+        for child in node.args
+            n01_analyze_test_statements!(provenance, has_meaningful_test, child)
+        end
+        return nothing
     end
+
+    assertion = n01_test_assertion(node)
+    if !isnothing(assertion)
+        has_meaningful_test[] |=
+            n01_assertion_uses_numerical_result(assertion, provenance)
+        n01_mark_in_place_results!(provenance, assertion)
+        return nothing
+    end
+
+    if node.head == :macrocall
+        if first(node.args) == Symbol("@testset")
+            for child in node.args
+                child isa Expr && child.head in (:toplevel, :block) || continue
+                n01_analyze_test_statements!(provenance, has_meaningful_test, child)
+            end
+        end
+        return nothing
+    end
+
+    if node.head == :(=) && length(node.args) == 2
+        variable, value = node.args
+        variable isa Symbol && delete!(provenance, variable)
+        n01_mark_in_place_results!(provenance, value)
+        if variable isa Symbol && n01_ast_contains(n01_numerical_call, value)
+            push!(provenance, variable)
+        end
+        return nothing
+    end
+
+    n01_mark_in_place_results!(provenance, node)
+    return nothing
 end
 
 function n01_student_test_state(source)
@@ -70,18 +117,15 @@ function n01_student_test_state(source)
 
     scaffold_marker = "STUDENT_TEST_REQUIRED(N01)"
     has_literal_false = n01_ast_contains(node -> n01_test_assertion(node) === false, parsed)
-    assigned_results = Set{Symbol}()
-    assertions = Any[]
-    n01_collect_test_evidence!(assigned_results, assertions, parsed)
-    has_meaningful_test = any(assertions) do assertion
-        n01_assertion_uses_numerical_result(assertion, assigned_results)
-    end
+    provenance = Set{Any}()
+    has_meaningful_test = Ref(false)
+    n01_analyze_test_statements!(provenance, has_meaningful_test, parsed)
 
     is_scaffold = occursin(scaffold_marker, source) && has_literal_false
     is_completed =
         !occursin(scaffold_marker, source) &&
         !has_literal_false &&
-        has_meaningful_test
+        has_meaningful_test[]
     return (; is_scaffold, is_completed)
 end
 
@@ -122,6 +166,11 @@ end
             end
             @test 1 == 1
             """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            result = 1
+            @test result == 1
+            """,
             "result = N01LinearAdvection.simulate(",
         )
             rejected = n01_student_test_state(rejected_source)
@@ -141,6 +190,24 @@ end
         """)
         @test !assigned_result.is_scaffold
         @test assigned_result.is_completed
+
+        upwind_in_place = n01_student_test_state("""
+            u_old = [1.0, 2.0, 4.0, 8.0]
+            u_new = similar(u_old)
+            N01LinearAdvection.upwind_step!(u_new, u_old, 1.0, 0.25, 0.5)
+            @test u_new[2] == 1.5
+        """)
+        @test !upwind_in_place.is_scaffold
+        @test upwind_in_place.is_completed
+
+        centered_in_place = n01_student_test_state("""
+            u_old = [1.0, 2.0, 4.0, 8.0]
+            u_new = similar(u_old)
+            N01LinearAdvection.centered_step!(u_new, u_old, 1.0, 0.25, 0.5)
+            @test u_new[2] == 1.25
+        """)
+        @test !centered_in_place.is_scaffold
+        @test centered_in_place.is_completed
     end
 
     project = TOML.parsefile(joinpath(N01_ROOT, "Project.toml"))
