@@ -32,6 +32,26 @@ end
 
 n01_numerical_call(node) = !isnothing(n01_numerical_call_name(node))
 
+function n01_mutating_call(node)
+    node isa Expr && node.head == :call || return false
+    callee = first(node.args)
+    name = if callee isa Symbol
+        callee
+    elseif callee isa Expr && callee.head == :. && length(callee.args) == 2 &&
+            callee.args[2] isa QuoteNode
+        callee.args[2].value
+    else
+        nothing
+    end
+    return !isnothing(name) && endswith(String(name), "!")
+end
+
+n01_has_uncertain_mutation(node) = n01_ast_contains(
+    candidate -> n01_mutating_call(candidate) &&
+        isnothing(n01_numerical_call_name(candidate)),
+    node,
+)
+
 function n01_test_assertion(node)
     node isa Expr && node.head == :macrocall && length(node.args) >= 3 || return nothing
     first(node.args) == Symbol("@test") || return nothing
@@ -88,6 +108,31 @@ function n01_uses_numerical_result(node, numerical)
     )
 end
 
+function n01_numerical_term(node, numerical)
+    node isa Symbol && node in numerical && return node
+    n01_numerical_call(node) && return node
+    node isa Expr && node.head in (:., :ref) &&
+        n01_uses_numerical_result(node, numerical) && return node
+    return nothing
+end
+
+function n01_has_multiple_numerical_terms(node, numerical)
+    terms = Any[]
+    function collect_terms(candidate)
+        term = n01_numerical_term(candidate, numerical)
+        if !isnothing(term)
+            push!(terms, term)
+            return nothing
+        end
+        candidate isa Expr || return nothing
+        candidate.head in (:quote, :inert, :function, :macro, :->) && return nothing
+        foreach(collect_terms, candidate.args)
+        return nothing
+    end
+    collect_terms(node)
+    return length(terms) > 1
+end
+
 function n01_uses_independent_expected(node, numerical, expected)
     n01_uses_numerical_result(node, numerical) && return false
     return n01_ast_contains(
@@ -103,6 +148,9 @@ function n01_assertion_compares_numerical_result(assertion, numerical, expected)
     isnothing(operands) && return false
     left, right = operands
     isequal(left, right) && return false
+    n01_has_uncertain_mutation(assertion) && return false
+    (n01_has_multiple_numerical_terms(left, numerical) ||
+        n01_has_multiple_numerical_terms(right, numerical)) && return false
 
     left_numerical = n01_uses_numerical_result(left, numerical)
     right_numerical = n01_uses_numerical_result(right, numerical)
@@ -153,12 +201,25 @@ function n01_analyze_test_statements!(numerical, expected, has_meaningful_test, 
             delete!(expected, variable)
             value_is_numerical && push!(numerical, variable)
             value_is_expected && push!(expected, variable)
+        else
+            empty!(numerical)
+            empty!(expected)
         end
-        n01_mark_in_place_results!(numerical, expected, value)
+        if n01_has_uncertain_mutation(value)
+            empty!(numerical)
+            empty!(expected)
+        else
+            n01_mark_in_place_results!(numerical, expected, value)
+        end
         return nothing
     end
 
-    n01_mark_in_place_results!(numerical, expected, node)
+    if n01_has_uncertain_mutation(node)
+        empty!(numerical)
+        empty!(expected)
+    else
+        n01_mark_in_place_results!(numerical, expected, node)
+    end
     return nothing
 end
 
@@ -270,6 +331,52 @@ end
             """
             result = N01LinearAdvection.simulate(; scheme=:upwind)
             @test result.minimum == identity(result.minimum)
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            @test result.minimum - result.minimum == 0.0
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            numerical_alias = result.minimum
+            @test numerical_alias - numerical_alias == 0.0
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            minimum_alias = result.minimum
+            same_minimum = minimum_alias
+            @test minimum_alias - same_minimum == 0.0
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            result_alias = result
+            @test result.minimum == result_alias.minimum
+            """,
+            """
+            u_old = [1.0, 2.0, 4.0, 8.0]
+            u_new = similar(u_old)
+            N01LinearAdvection.upwind_step!(u_new, u_old, 1.0, 0.25, 0.5)
+            fill!(u_new, 9.0)
+            @test u_new[2] == 9.0
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            result_alias = result.u
+            fill!(result_alias, 9.0)
+            @test result_alias[1] == 9.0
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            expected = [1.0]
+            expected[1] = result.minimum
+            @test result.minimum == expected[1]
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            expected = [1.0]
+            expected_alias = expected
+            expected_alias[1] = result.minimum
+            @test result.minimum == expected[1]
             """,
             """
             result = N01LinearAdvection.simulate(; scheme=:upwind)
