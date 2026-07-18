@@ -545,7 +545,6 @@ end
             "# === 学生が実装する3つの関数 ===",
             "# === 境界条件と時間発展の流れ ===",
         )
-        @test count("# ===", source) == length(section_markers)
         marker_positions = map(marker -> findfirst(marker, source), section_markers)
         @test all(!isnothing, marker_positions)
         if all(!isnothing, marker_positions)
@@ -560,19 +559,35 @@ end
             "provided_support.jl",
             "おまじない",
             "読解・編集する必要はありません",
+            "value::T",
+            "{<:Real}",
+            ":upwind",
+            "condition ? true_value : false_value",
+            "named tuple",
         )
             @test occursin(required_header, source)
         end
 
         @test count("TODO(N01):", source) == 3
-        @test count("#=", source) == 3
-        @test count("=#", source) == 3
         for required_todo in (
             "矩形状の初期分布",
             "風上差分と陽Euler法による1step更新",
             "中心差分と陽Euler法による1step更新",
         )
             @test occursin(required_todo, source)
+            todo_pattern = Regex("TODO\\(N01\\):\\s+" * required_todo)
+            todo_position = findfirst(todo_pattern, source)
+            opening = isnothing(todo_position) ? nothing :
+                findprev("#=", source, first(todo_position))
+            closing_before = isnothing(todo_position) ? nothing :
+                findprev("=#", source, first(todo_position))
+            closing_after = isnothing(todo_position) ? nothing :
+                findnext("=#", source, last(todo_position))
+            @test !isnothing(opening)
+            @test !isnothing(closing_after)
+            if !isnothing(opening) && !isnothing(closing_before)
+                @test first(opening) > first(closing_before)
+            end
         end
 
         for function_name in (

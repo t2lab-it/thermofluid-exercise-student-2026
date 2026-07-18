@@ -8,6 +8,12 @@
 # `simulate`は初期条件、選択した1step更新、境界条件を順に組み合わせます。
 # 提供済みの`main`は二つの`simulate`と公式出力をまとめます。
 #
+# このファイルで出会うJuliaの記号:
+#   `value::T`は値の型を示し、`{<:Real}`は実数型の要素を許す指定です。
+#   `:upwind`は名前を表すSymbol、`===`は二つがまったく同じかを比べます。
+#   `condition ? true_value : false_value`は条件で二つの値を選びます。
+#   `(x = x, u = u)`は名前付きの結果をまとめるnamed tupleです。
+#
 # `include("provided_support.jl")`は、入力検証と出力処理を読み込む
 # 「おまじない」です。support fileを読解・編集する必要はありません。
 
