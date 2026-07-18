@@ -46,9 +46,16 @@ function n01_mutating_call(node)
     return !isnothing(name) && endswith(String(name), "!")
 end
 
+function n01_assignment_like_mutation(node)
+    node isa Expr && node.head isa Symbol || return false
+    return node.head != :(=) && endswith(String(node.head), "=")
+end
+
 n01_has_uncertain_mutation(node) = n01_ast_contains(
-    candidate -> n01_mutating_call(candidate) &&
-        isnothing(n01_numerical_call_name(candidate)),
+    candidate ->
+        (n01_mutating_call(candidate) &&
+            isnothing(n01_numerical_call_name(candidate))) ||
+        n01_assignment_like_mutation(candidate),
     node,
 )
 
@@ -75,6 +82,12 @@ function n01_mark_in_place_results!(numerical, expected, node)
     if node.head == :if && first(node.args) === false
         length(node.args) >= 3 &&
             n01_mark_in_place_results!(numerical, expected, node.args[3])
+        return nothing
+    end
+
+    if node.head == :if && first(node.args) === true
+        length(node.args) >= 2 &&
+            n01_mark_in_place_results!(numerical, expected, node.args[2])
         return nothing
     end
 
@@ -197,7 +210,8 @@ function n01_analyze_test_statements!(numerical, expected, has_meaningful_test, 
 
     if node.head == :(=) && length(node.args) == 2
         variable, value = node.args
-        value_is_numerical = n01_uses_numerical_result(value, numerical)
+        value_is_numerical =
+            !isnothing(n01_numerical_term(value, numerical))
         value_is_expected =
             !value_is_numerical &&
             n01_uses_independent_expected(value, numerical, expected)
@@ -348,6 +362,17 @@ end
             """,
             """
             result = N01LinearAdvection.simulate(; scheme=:upwind)
+            cancelled = result.minimum - result.minimum
+            @test cancelled == 0.0
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            numerical_alias = result.minimum
+            cancelled = numerical_alias - numerical_alias
+            @test cancelled == 0.0
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
             minimum_alias = result.minimum
             same_minimum = minimum_alias
             @test minimum_alias - same_minimum == 0.0
@@ -389,6 +414,30 @@ end
             expected_alias = expected
             expected_alias[1] = result.minimum
             @test result.minimum == expected[1]
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            expected = [1.0]
+            expected .= result.minimum
+            @test result.minimum == expected[1]
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            expected = [0.0]
+            expected[1] += result.minimum
+            @test result.minimum == expected[1]
+            """,
+            """
+            u_old = [1.0, 2.0, 4.0, 8.0]
+            u_new = similar(u_old)
+            if true
+                nothing
+            else
+                N01LinearAdvection.upwind_step!(
+                    u_new, u_old, 1.0, 0.25, 0.5,
+                )
+            end
+            @test u_new[2] == 2.0
             """,
             """
             result = N01LinearAdvection.simulate(; scheme=:upwind)
