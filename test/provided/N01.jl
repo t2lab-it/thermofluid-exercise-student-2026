@@ -124,8 +124,10 @@ end
 function n01_numerical_term(node, numerical)
     node isa Symbol && node in numerical && return node
     n01_numerical_call(node) && return node
-    node isa Expr && node.head in (:., :ref) &&
-        n01_uses_numerical_result(node, numerical) && return node
+    if node isa Expr && node.head in (:., :ref) && !isempty(node.args)
+        base = first(node.args)
+        !isnothing(n01_numerical_term(base, numerical)) && return node
+    end
     return nothing
 end
 
@@ -369,6 +371,21 @@ end
             result = N01LinearAdvection.simulate(; scheme=:upwind)
             numerical_alias = result.minimum
             cancelled = numerical_alias - numerical_alias
+            @test cancelled == 0.0
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            @test [result.minimum - result.minimum][1] == 0.0
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            cancelled = [result.minimum - result.minimum][1]
+            @test cancelled == 0.0
+            """,
+            """
+            result = N01LinearAdvection.simulate(; scheme=:upwind)
+            numerical_alias = result.minimum
+            cancelled = (value=numerical_alias - numerical_alias,).value
             @test cancelled == 0.0
             """,
             """
