@@ -176,7 +176,12 @@ function n01_analyze_test_statements!(numerical, expected, has_meaningful_test, 
     if !isnothing(assertion)
         has_meaningful_test[] |=
             n01_assertion_compares_numerical_result(assertion, numerical, expected)
-        n01_mark_in_place_results!(numerical, expected, assertion)
+        if n01_has_uncertain_mutation(assertion)
+            empty!(numerical)
+            empty!(expected)
+        else
+            n01_mark_in_place_results!(numerical, expected, assertion)
+        end
         return nothing
     end
 
@@ -357,6 +362,13 @@ end
             u_new = similar(u_old)
             N01LinearAdvection.upwind_step!(u_new, u_old, 1.0, 0.25, 0.5)
             fill!(u_new, 9.0)
+            @test u_new[2] == 9.0
+            """,
+            """
+            u_old = [1.0, 2.0, 4.0, 8.0]
+            u_new = similar(u_old)
+            N01LinearAdvection.upwind_step!(u_new, u_old, 1.0, 0.25, 0.5)
+            @test fill!(u_new, 9.0) == fill(9.0, 4)
             @test u_new[2] == 9.0
             """,
             """
