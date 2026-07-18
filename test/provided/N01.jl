@@ -705,20 +705,24 @@ end
     @test isfile(N01_TASK)
     if isfile(N01_TASK)
         task = read(N01_TASK, String)
-        @test occursin("https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/N01.html", task)
-        @test occursin("julia --project=. scripts/course.jl start N01", task)
-        @test occursin("self-contained", lowercase(task))
-        @test occursin("風上差分", task) && occursin("安定", task)
-        @test occursin("中心差分", task) && occursin("意図的", task) && occursin("不安定", task)
-        @test occursin("results/N01/upwind.png", task)
-        @test occursin("results/N01/centered-euler.png", task)
-        @test occursin("results/N01/summary.toml", task)
-        @test occursin("デバッグ補助", task)
-        @test occursin("秘密", task)
-        @test occursin("出力処理は提供済み", task)
-        @test occursin("時間ループ", task) && occursin("バッファ交換", task)
-        @test occursin("詳細な入力検証", task) && occursin("提供済み", task)
-        @test !occursin("CairoMakie", task)
+        for required_entry in (
+            "説明の正本",
+            "https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/N01.html",
+            "exercises/N01_linear_advection/run.jl",
+            "test/student/N01.jl",
+            "learning_logs/N01.md",
+            "rectangular_initial_condition",
+            "upwind_step!",
+            "centered_step!",
+            "julia --project=. scripts/course.jl start N01",
+            "julia --project=. exercises/N01_linear_advection/run.jl",
+            "julia --project=. -e 'using Pkg; Pkg.test()'",
+            "results/N01/upwind.png",
+            "results/N01/centered-euler.png",
+            "results/N01/summary.toml",
+        )
+            @test occursin(required_entry, task)
+        end
     end
     @test isfile(N01_STUDENT_TEST)
     if isfile(N01_STUDENT_TEST)
