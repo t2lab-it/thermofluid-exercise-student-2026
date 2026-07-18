@@ -708,6 +708,7 @@ end
         for required_entry in (
             "説明の正本",
             "https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/N01.html",
+            "https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/N01.html#完了条件",
             "exercises/N01_linear_advection/run.jl",
             "test/student/N01.jl",
             "learning_logs/N01.md",
