@@ -3,6 +3,9 @@ using TOML
 
 const N01_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const N01_RUN = joinpath(N01_ROOT, "exercises", "N01_linear_advection", "run.jl")
+const N01_SUPPORT = joinpath(
+    N01_ROOT, "exercises", "N01_linear_advection", "provided_support.jl",
+)
 const N01_TASK = joinpath(N01_ROOT, "exercises", "N01_linear_advection", "TASK.md")
 const N01_LOG = joinpath(N01_ROOT, "learning_logs", "templates", "N01.md")
 const N01_STUDENT_TEST = joinpath(N01_ROOT, "test", "student", "N01.jl")
@@ -541,7 +544,6 @@ end
         section_markers = (
             "# === 学生が実装する3つの関数 ===",
             "# === 境界条件と時間発展の流れ ===",
-            "# === 提供済みの検証・出力処理 ===",
         )
         @test count("# ===", source) == length(section_markers)
         marker_positions = map(marker -> findfirst(marker, source), section_markers)
@@ -549,16 +551,33 @@ end
         if all(!isnothing, marker_positions)
             @test issorted(map(first, marker_positions))
         end
-        @test count("TODO(N01)", source) == 3
-        for marker in (
-            "# TODO(N01): 矩形状の初期分布を実装する。",
-            "# TODO(N01): 風上差分と陽Eulerによる更新式を実装する。",
-            "# TODO(N01): 中心差分と陽Eulerによる更新式を実装する。",
+
+        for required_header in (
+            "1次元線形移流方程式",
+            "読む順序",
+            "rectangular_initial_condition → upwind_step! / centered_step!",
+            "apply_boundary! → simulate",
+            "provided_support.jl",
+            "おまじない",
+            "読解・編集する必要はありません",
         )
-            @test count(marker, source) == 1
+            @test occursin(required_header, source)
         end
+
+        @test count("TODO(N01):", source) == 3
+        @test count("#=", source) == 3
+        @test count("=#", source) == 3
+        for required_todo in (
+            "矩形状の初期分布",
+            "風上差分と陽Euler法による1step更新",
+            "中心差分と陽Euler法による1step更新",
+        )
+            @test occursin(required_todo, source)
+        end
+
         for function_name in (
             "rectangular_initial_condition", "upwind_step!", "centered_step!",
+            "apply_boundary!", "simulate",
         )
             attached = match(Regex(
                 "\"\"\"((?:(?!\"\"\")[\\s\\S])*)\"\"\"\\s*function\\s+" *
@@ -566,14 +585,24 @@ end
             ), source)
             @test !isnothing(attached)
             if !isnothing(attached)
-                @test occursin(r"[ぁ-んァ-ヶ一-龠]", only(attached.captures))
+                doc = only(attached.captures)
+                @test occursin("# 引数", doc)
+                @test occursin("# 戻り値", doc)
             end
         end
+        for function_name in ("upwind_step!", "centered_step!", "apply_boundary!")
+            attached = match(Regex(
+                "\"\"\"((?:(?!\"\"\")[\\s\\S])*)\"\"\"\\s*function\\s+" *
+                function_name * "\\s*\\(",
+            ), source)
+            !isnothing(attached) && @test occursin("書き換", only(attached.captures))
+        end
+
         @test !occursin("台形部", source)
         for function_name in ("upwind_step!", "centered_step!")
             editable_prefix = match(Regex(
                 "function\\s+" * function_name *
-                "\\s*\\([\\s\\S]*?# TODO\\(N01\\):",
+                "\\s*\\([\\s\\S]*?TODO\\(N01\\):",
             ), source)
             @test !isnothing(editable_prefix)
             if !isnothing(editable_prefix)
@@ -582,11 +611,32 @@ end
                 @test occursin("端点", editable_prefix.match)
             end
         end
+
+        @test occursin("include(\"provided_support.jl\")", source)
+        @test isfile(N01_SUPPORT)
+        support = isfile(N01_SUPPORT) ? read(N01_SUPPORT, String) : ""
+        if isfile(N01_SUPPORT)
+            for supplied_name in (
+                "validate_initial_condition_inputs", "validate_step_inputs",
+                "validate_boundary_inputs", "validate_simulation_inputs",
+                "summary_section", "write_summary", "make_plots", "main",
+            )
+                @test occursin("function " * supplied_name, support)
+            end
+            for supplied_copy in (
+                "実行時の入力条件", "受講生が編集する必要はありません",
+                "summary.toml", "upwind.png", "centered-euler.png",
+            )
+                @test occursin(supplied_copy, support)
+            end
+        end
+
+        combined_source = source * "\n" * support
         for name in (
             :rectangular_initial_condition, :apply_boundary!, :upwind_step!, :centered_step!,
             :simulate, :write_summary, :make_plots, :main,
         )
-            @test occursin(string(name), source)
+            @test occursin(string(name), combined_source)
         end
 
         if !isdefined(Main, :N01LinearAdvection)
