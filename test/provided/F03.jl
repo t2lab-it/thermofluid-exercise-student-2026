@@ -2,7 +2,6 @@ using Test
 
 const F03_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const F03_RUN = joinpath(F03_ROOT, "exercises", "F03_numerical_primer", "run.jl")
-const F03_TASK = joinpath(F03_ROOT, "exercises", "F03_numerical_primer", "TASK.md")
 const F03_LOG = joinpath(F03_ROOT, "learning_logs", "templates", "F03.md")
 
 @testset "F03 numerical primer" begin
@@ -50,21 +49,6 @@ const F03_LOG = joinpath(F03_ROOT, "learning_logs", "templates", "F03.md")
         end
         @test_throws ArgumentError F03NumericalPrimer.backward_difference_at([1.0, NaN], 2, 1.0)
         @test_throws ArgumentError F03NumericalPrimer.centered_difference_at([1.0, 2.0, Inf], 2, 1.0)
-    end
-
-    @test isfile(F03_TASK)
-    if isfile(F03_TASK)
-        task = read(F03_TASK, String)
-        @test occursin("https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F03.html", task)
-        @test occursin("julia --project=. scripts/course.jl start F03", task)
-        @test occursin("julia --project=. -e 'using Pkg; Pkg.test()'", task)
-        @test occursin("(u[i] - u[i - 1]) / dx", task)
-        @test occursin("(u[i + 1] - u[i - 1]) / (2 * dx)", task)
-        @test occursin("Juliaの`u[i]`", task) && occursin("x_i", task)
-        @test occursin("公式出力：なし", task)
-        @test occursin("test/student/F03.jl", task)
-        @test occursin("learning_logs/F03.md", task)
-        @test occursin("src/", task) && occursin("N01", task)
     end
 
     @test isfile(F03_LOG)

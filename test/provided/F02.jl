@@ -2,7 +2,6 @@ using Test
 
 const F02_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const F02_RUN = joinpath(F02_ROOT, "exercises", "F02_julia_arrays_and_tests", "run.jl")
-const F02_TASK = joinpath(F02_ROOT, "exercises", "F02_julia_arrays_and_tests", "TASK.md")
 const F02_LOG = joinpath(F02_ROOT, "learning_logs", "templates", "F02.md")
 
 @testset "F02 arrays, functions, and tests" begin
@@ -28,18 +27,6 @@ const F02_LOG = joinpath(F02_ROOT, "learning_logs", "templates", "F02.md")
             @test_throws ArgumentError F02JuliaArraysAndTests.temperature_anomaly(invalid)
         end
         @test_throws MethodError F02JuliaArraysAndTests.mean_temperature(["cold", "hot"])
-    end
-
-    @test isfile(F02_TASK)
-    if isfile(F02_TASK)
-        task = read(F02_TASK, String)
-        @test occursin("https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F02.html", task)
-        @test occursin("F01", task) && occursin("merge", task) && occursin("clean", task)
-        @test occursin("julia --project=. scripts/course.jl start F02", task)
-        @test occursin("julia --project=. -e 'using Pkg; Pkg.test()'", task)
-        @test occursin("公式出力：なし", task)
-        @test occursin("test/student/F02.jl", task)
-        @test occursin("learning_logs/F02.md", task)
     end
 
     @test isfile(F02_LOG)

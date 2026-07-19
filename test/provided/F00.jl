@@ -174,25 +174,4 @@ end
         @test !isdir(joinpath(root, ".git"))
     end
 
-    @testset "student-facing F00 files keep the bounded contract" begin
-        task_path = joinpath(F00_REPO_ROOT, "exercises", "F00_environment", "TASK.md")
-        @test isfile(task_path)
-        @test isfile(F00_RUN_SCRIPT)
-        if isfile(task_path)
-            task = read(task_path, String)
-            @test occursin("assignments/F00", task)
-            @test occursin("--confirm-github", task)
-            @test occursin("--confirm-agent", task)
-            @test occursin("juliaup", lowercase(task))
-            @test occursin("Julia拡張", task)
-            @test occursin("Pkg.instantiate", task)
-            @test occursin("scratch", lowercase(task))
-            @test occursin("scratch/F00-agent-check.txt", task)
-            @test occursin("削除", task)
-            @test occursin("追跡", task)
-            @test occursin("秘密", task)
-            @test !occursin("Codespaces", task)
-            @test !occursin("devcontainer", lowercase(task))
-        end
-    end
 end

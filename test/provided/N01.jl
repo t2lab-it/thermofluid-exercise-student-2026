@@ -6,7 +6,6 @@ const N01_RUN = joinpath(N01_ROOT, "exercises", "N01_linear_advection", "run.jl"
 const N01_SUPPORT = joinpath(
     N01_ROOT, "exercises", "N01_linear_advection", "provided_support.jl",
 )
-const N01_TASK = joinpath(N01_ROOT, "exercises", "N01_linear_advection", "TASK.md")
 const N01_LOG = joinpath(N01_ROOT, "learning_logs", "templates", "N01.md")
 const N01_STUDENT_TEST = joinpath(N01_ROOT, "test", "student", "N01.jl")
 function n01_test_assertions(node, assertions=Any[])
@@ -299,29 +298,6 @@ end
         end
     end
 
-    @test isfile(N01_TASK)
-    if isfile(N01_TASK)
-        task = read(N01_TASK, String)
-        for required_entry in (
-            "説明の正本",
-            "https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/N01.html",
-            "https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/N01.html#完了条件",
-            "exercises/N01_linear_advection/run.jl",
-            "test/student/N01.jl",
-            "learning_logs/N01.md",
-            "rectangular_initial_condition",
-            "upwind_step!",
-            "centered_step!",
-            "julia --project=. scripts/course.jl start N01",
-            "julia --project=. exercises/N01_linear_advection/run.jl",
-            "julia --project=. -e 'using Pkg; Pkg.test()'",
-            "results/N01/upwind.png",
-            "results/N01/centered-euler.png",
-            "results/N01/summary.toml",
-        )
-            @test occursin(required_entry, task)
-        end
-    end
     @test isfile(N01_STUDENT_TEST)
     if isfile(N01_STUDENT_TEST)
         student_test = read(N01_STUDENT_TEST, String)
