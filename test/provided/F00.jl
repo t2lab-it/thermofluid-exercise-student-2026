@@ -32,7 +32,7 @@ end
 
 function initial_f00_repo()
     root = mktempdir()
-    state = load_progress(joinpath(F00_REPO_ROOT, "course_progress.toml"))
+    state = ProgressState(1, ORDERED, String[], "F00")
     save_progress(joinpath(root, "course_progress.toml"), state)
     root
 end
