@@ -1,3 +1,105 @@
-# 熱流体力学演習（2026）学生用テンプレート
+# 熱流体力学演習（2026）学生用リポジトリ
 
-個人GitHub Classroom assignmentの学生用テンプレートです。
+2026年度「熱流体力学演習」で使用する、個人GitHub Classroom assignmentの学生用private template repositoryです。Juliaによる数値計算を題材に、テスト、Git／GitHub、学習ログ、Coding Agentを組み合わせて、結果を検証しながらコードを開発します。
+
+## はじめに
+
+課題に取り組むときは、次の3つを使い分けてください。
+
+- [公開教材サイト](https://t2lab-it.github.io/thermofluid-exercise-2026/): 数式、背景、詳しい課題説明の正本
+- このREADME: リポジトリ全体の使い方と共通ワークフロー
+- `exercises/<課題>/TASK.md`: リポジトリ内で編集・実行するファイルと課題固有の完了条件
+
+## 必要な環境
+
+- Julia 1.12.6
+- Git
+- VS CodeとJulia拡張`julialang.language-julia`
+- GitHub Copilot、OpenAI Codex、Amazon Q Developerのいずれか一つ
+
+Windows、macOS、Linuxのローカル環境を対象にします。詳しい導入手順は公開教材の[F00 環境診断](https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F00.html)を参照してください。
+
+## 利用開始
+
+GitHub Classroomで作成された自分の課題リポジトリをcloneし、リポジトリrootで依存関係を準備します。
+
+```bash
+git clone <自分の課題リポジトリURL>
+cd <cloneされたディレクトリ>
+julia --project=. -e 'using Pkg; Pkg.instantiate()'
+julia --project=. scripts/course.jl preflight
+```
+
+最後の`preflight`は環境を観測して表示するだけで、確認引数を付けない限り進捗を変更しません。表示された`NEEDS SETUP`と`Action`を読み、F00の手順に沿って環境を整えてください。
+
+## 課題の進め方
+
+課題開始方法には次の例外があります。
+
+- `F00`: branch、commit、push、Pull Request、学習ログを作りません。
+- `F01`: 課題branchを手動で作り、最初のPull Requestを経験します。
+- `F02`以降: 前課題をmergeしてcleanな`main`へ戻った後、`course.jl start <ID>`で次の課題を開始します。
+
+通常課題は次の順で進めます。
+
+1. 公開教材と`TASK.md`を読む。
+2. 課題branchで実装し、自分のテストを追加する。
+3. ローカルテストを実行し、必要な公式出力を再生成する。
+4. 学習ログに予想、変更、diff、テスト、数値結果、判断を記録する。
+5. 変更をcommitしてpushし、`main`へのPull Requestを作る。
+6. Actions、Files changed、完了条件を確認してセルフレビューする。
+7. Pull Requestをmergeし、ローカルの`main`を更新する。
+
+## 主要コマンド
+
+```bash
+# F00の環境診断
+julia --project=. scripts/course.jl preflight
+
+# F02以降の課題開始例
+julia --project=. scripts/course.jl start F02
+
+# 現在課題と完了済み課題
+julia --project=. scripts/course.jl status
+
+# 公式生成物のサイズ制限
+julia --project=. scripts/course.jl check-results
+
+# 完了済み課題と現在課題のローカルテスト
+julia --project=. -e 'using Pkg; Pkg.test()'
+```
+
+`start`はcleanな`main`、課題の順序、現在までのローカルテスト、生成物サイズを確認してから課題branchを作ります。pull、push、Pull Request、mergeは自動化しません。
+
+## リポジトリ構成
+
+| パス | 役割 |
+|---|---|
+| `exercises/` | 課題ごとのスターター、実行コード、`TASK.md` |
+| `test/provided/` | 教員が提供する公開テスト |
+| `test/student/` | 学生が課題ごとに追加するテスト |
+| `learning_logs/` | 学習ログのテンプレートと記入済みログ |
+| `results/` | 公式`run.jl`が生成する提出対象の結果 |
+| `scratch/` | 一時的な試行。正式な成果物は置かない |
+| `scripts/` | 課題進行と生成物検査の補助コマンド |
+| `src/` | 後半課題で共通化するJuliaコード |
+
+## 現在の収録範囲
+
+| 課題ID | 内容 |
+|---|---|
+| `F00` | 環境診断 |
+| `F01` | 最初のPull Request |
+| `F02` | Juliaの配列・関数・テスト |
+| `F03` | 数値計算の準備 |
+| `N01` | 1次元線形移流方程式 |
+
+`N02`以降の数値課題は順次追加します。
+
+## 注意事項
+
+- アクセストークン、パスワード、秘密鍵、不要な個人情報をcommitしないでください。
+- `test/provided/`の提供テストを削除したり、判定を弱めたりしないでください。
+- 公式`run.jl`が`results/<課題ID>/`へ生成した成果物は、サイズ制限を確認してcommitします。
+- `scratch/`は一時作業用です。提出対象の実装や結果の正本にしません。
+- Coding Agentの提案は、diff、テスト、数値結果を自分で確認し、採用・修正・却下の理由を学習ログへ記録してください。
