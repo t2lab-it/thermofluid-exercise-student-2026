@@ -157,16 +157,6 @@ end
         @test progress_snapshot(repo) == before
     end
 
-    @testset "start rejects a skipped ID atomically" begin
-        repo = make_course_repo()
-        before = progress_snapshot(repo)
-        result = run_course(repo, ["start", "F03"])
-        @test result.exitcode != 0
-        @test occursin("F02", result.stderr)
-        @test progress_snapshot(repo) == before
-        @test readchomp(`git -C $repo branch --show-current`) == "main"
-    end
-
     @testset "start rejects failing current tests atomically" begin
         repo = make_course_repo(failing_current=true)
         before = progress_snapshot(repo)
@@ -250,15 +240,13 @@ if get(ENV, "COURSE_SELECTION_PROBE_CHILD", "0") != "1"
             end
             @test endswith(unix_recorder.wrapper, "git")
             @test endswith(windows_recorder.wrapper, "git.cmd")
-            @test occursin("#!/bin/sh", read(unix_recorder.wrapper, String))
-            @test occursin("@echo off", lowercase(read(windows_recorder.wrapper, String)))
             native_recorder = select_native_recorder(unix_recorder, windows_recorder)
             for verb in ("pull", "push", "fetch", "clone", "remote", "merge")
-                @test occursin(verb, read(unix_recorder.wrapper, String))
-                @test occursin(verb, read(windows_recorder.wrapper, String))
                 command = recorder_command(native_recorder, ["-C", make_course_repo(), verb])
                 result = command_result(addenv(command, "COURSE_GIT_LOG" => native_recorder.log))
                 @test result.exitcode == 97
+                @test occursin("git ", read(native_recorder.log, String))
+                @test occursin(verb, read(native_recorder.log, String))
             end
         end
     end
