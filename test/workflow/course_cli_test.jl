@@ -203,6 +203,12 @@ end
 end
 if get(ENV, "COURSE_SELECTION_PROBE_CHILD", "0") != "1"
 @testset "Task 3 review regressions" begin
+    @testset "student README uses public assignment pages" begin
+        readme = read(joinpath(CLI_REPO_ROOT, "README.md"), String)
+        @test !occursin("TASK.md", readme)
+        @test occursin("https://t2lab-it.github.io/thermofluid-exercise-2026/", readme)
+        @test occursin("run.jl", readme)
+    end
     @testset "Git recorder is cross-platform and rejects automated history or network verbs" begin
         unix_recorder = try
             install_git_recorder(windows=false)
