@@ -179,5 +179,5 @@ end
 if abspath(PROGRAM_FILE) == @__FILE__
     F00Environment.print_preflight(stdout, F00Environment.collect_preflight())
     println()
-    println("This script is diagnostic only. Complete F00 through scripts/course.jl as described in TASK.md.")
+    println("This script is diagnostic only. Complete F00 through scripts/course.jl by following https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F00.html.")
 end

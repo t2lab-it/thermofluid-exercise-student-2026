@@ -8,7 +8,7 @@
 
 - [公開教材サイト](https://t2lab-it.github.io/thermofluid-exercise-2026/): 数式、背景、詳しい課題説明の正本
 - このREADME: リポジトリ全体の使い方と共通ワークフロー
-- `exercises/<課題>/TASK.md`: リポジトリ内で編集・実行するファイルと課題固有の完了条件
+- `exercises/<課題>/run.jl`: 公開教材の課題ページで指定された実装・実行対象
 
 ## 必要な環境
 
@@ -42,7 +42,7 @@ julia --project=. scripts/course.jl preflight
 
 通常課題は次の順で進めます。
 
-1. 公開教材と`TASK.md`を読む。
+1. 公開教材の対応する課題ページを読み、指定された`run.jl`を確認する。
 2. 課題branchで実装し、自分のテストを追加する。
 3. ローカルテストを実行し、必要な公式出力を再生成する。
 4. 学習ログに予想、変更、diff、テスト、数値結果、判断を記録する。
@@ -75,7 +75,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 
 | パス | 役割 |
 |---|---|
-| `exercises/` | 課題ごとのスターター、実行コード、`TASK.md` |
+| `exercises/` | 課題ごとのスターターと公式`run.jl` |
 | `test/provided/` | 教員が提供する公開テスト |
 | `test/student/` | 学生が課題ごとに追加するテスト |
 | `learning_logs/` | 学習ログのテンプレートと記入済みログ |
