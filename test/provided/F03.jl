@@ -1,75 +1,96 @@
 using Test
 
 const F03_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
-const F03_RUN = joinpath(F03_ROOT, "exercises", "F03_numerical_primer", "run.jl")
-const F03_TASK = joinpath(F03_ROOT, "exercises", "F03_numerical_primer", "TASK.md")
+const F03_RUN = joinpath(F03_ROOT, "exercises", "F03_vector_calculus", "run.jl")
+const F03_OLD_ROOT = joinpath(F03_ROOT, "exercises", "F03_numerical_primer")
 const F03_LOG = joinpath(F03_ROOT, "learning_logs", "templates", "F03.md")
 
-@testset "F03 numerical primer" begin
+@testset "F03 vector calculus identities" begin
     @test isfile(F03_RUN)
+    @test !ispath(F03_OLD_ROOT)
+
     if isfile(F03_RUN)
-        if !isdefined(Main, :F03NumericalPrimer)
+        if !isdefined(Main, :F03VectorCalculus)
             include(F03_RUN)
         end
 
-        grid = F03NumericalPrimer.uniform_grid(0.0, 1.0, 3)
-        @test grid == [0.0, 0.5, 1.0]
-        @test F03NumericalPrimer.uniform_grid(Float32(0), Float32(1), 3) isa Vector{Float32}
-        @test_throws ArgumentError F03NumericalPrimer.uniform_grid(0.0, 1.0, 1)
-        @test_throws ArgumentError F03NumericalPrimer.uniform_grid(0.0, 1.0, true)
-        @test_throws ArgumentError F03NumericalPrimer.uniform_grid(1.0, 1.0, 3)
-        @test_throws ArgumentError F03NumericalPrimer.uniform_grid(2.0, 1.0, 3)
-        @test_throws ArgumentError F03NumericalPrimer.uniform_grid(NaN, 1.0, 3)
-        @test_throws ArgumentError F03NumericalPrimer.uniform_grid(0.0, Inf, 3)
+        p = (0.2, -0.3, 0.4)
+        h = 0.1
+        quadratic(q) = q[1]^2 + 2q[2] + 3q[3]
 
-        u = [1.0, 2.0, 4.0, 8.0]
-        original = copy(u)
-        @test F03NumericalPrimer.backward_difference_at(u, 3, 0.5) == 4.0
-        @test F03NumericalPrimer.centered_difference_at(u, 3, 0.5) == 6.0
-        @test u == original
+        @test isapprox(F03VectorCalculus.centered_partial(quadratic, p, 1, h), 0.4; atol=1e-12)
+        @test isapprox(F03VectorCalculus.centered_partial(quadratic, p, 2, h), 2.0; atol=1e-12)
+        @test isapprox(F03VectorCalculus.centered_partial(quadratic, p, 3, h), 3.0; atol=1e-12)
 
-        x = collect(range(0.0, 1.0; length=6))
-        linear = 3 .* x .+ 2
-        dx = x[2] - x[1]
-        @test all(i -> isapprox(
-            F03NumericalPrimer.backward_difference_at(linear, i, dx), 3.0; atol=100eps(),
-        ), 2:length(linear))
-        @test all(i -> isapprox(
-            F03NumericalPrimer.centered_difference_at(linear, i, dx), 3.0; atol=100eps(),
-        ), 2:(length(linear) - 1))
+        @test all(isapprox.(
+            F03VectorCalculus.curl_gradient_residual(p, h),
+            (-2.919541147070742e-4, 4.65595243438921e-3, 0.0);
+            atol=1e-12,
+        ))
+        @test isapprox(
+            F03VectorCalculus.divergence_curl_residual(p, h),
+            -1.092077525305879e-2;
+            atol=1e-12,
+        )
+        @test isapprox(
+            F03VectorCalculus.laplacian_identity_residual(p, h),
+            1.4154764729020775e-3;
+            atol=1e-12,
+        )
 
-        for bad_dx in (0.0, -0.1, NaN, Inf)
-            @test_throws ArgumentError F03NumericalPrimer.backward_difference_at(u, 2, bad_dx)
-            @test_throws ArgumentError F03NumericalPrimer.centered_difference_at(u, 2, bad_dx)
+        coarse = F03VectorCalculus.verify_identities(9)
+        fine = F03VectorCalculus.verify_identities(17)
+        @test keys(coarse) == (
+            :curl_gradient,
+            :divergence_curl,
+            :laplacian_identity,
+        )
+        for key in keys(coarse)
+            coarse_error = getproperty(coarse, key)
+            fine_error = getproperty(fine, key)
+            @test isfinite(coarse_error)
+            @test isfinite(fine_error)
+            @test 0 < fine_error < coarse_error
+            @test 3.0 <= coarse_error / fine_error <= 4.8
         end
-        for bad_i in (true, 0, 1, 5)
-            @test_throws ArgumentError F03NumericalPrimer.backward_difference_at(u, bad_i, 0.5)
-        end
-        for bad_i in (true, 0, 1, 4, 5)
-            @test_throws ArgumentError F03NumericalPrimer.centered_difference_at(u, bad_i, 0.5)
-        end
-        @test_throws ArgumentError F03NumericalPrimer.backward_difference_at([1.0, NaN], 2, 1.0)
-        @test_throws ArgumentError F03NumericalPrimer.centered_difference_at([1.0, 2.0, Inf], 2, 1.0)
-    end
 
-    @test isfile(F03_TASK)
-    if isfile(F03_TASK)
-        task = read(F03_TASK, String)
-        @test occursin("https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F03.html", task)
-        @test occursin("julia --project=. scripts/course.jl start F03", task)
-        @test occursin("julia --project=. -e 'using Pkg; Pkg.test()'", task)
-        @test occursin("(u[i] - u[i - 1]) / dx", task)
-        @test occursin("(u[i + 1] - u[i - 1]) / (2 * dx)", task)
-        @test occursin("Juliaの`u[i]`", task) && occursin("x_i", task)
-        @test occursin("公式出力：なし", task)
-        @test occursin("test/student/F03.jl", task)
-        @test occursin("learning_logs/F03.md", task)
-        @test occursin("src/", task) && occursin("N01", task)
+        for call in (
+            () -> F03VectorCalculus.centered_partial(quadratic, p, true, h),
+            () -> F03VectorCalculus.centered_partial(quadratic, p, 0, h),
+            () -> F03VectorCalculus.centered_partial(quadratic, p, 4, h),
+            () -> F03VectorCalculus.centered_partial(quadratic, p, 1, 0.0),
+            () -> F03VectorCalculus.centered_partial(quadratic, p, 1, Inf),
+            () -> F03VectorCalculus.centered_partial(
+                quadratic, (0.0, NaN, 0.0), 1, h,
+            ),
+            () -> F03VectorCalculus.verify_identities(true),
+            () -> F03VectorCalculus.verify_identities(2),
+            () -> F03VectorCalculus.verify_identities(8),
+        )
+            @test_throws ArgumentError call()
+        end
+
+        run(`$(Base.julia_cmd()) --startup-file=no --project=$(F03_ROOT) $(F03_RUN)`)
+        @test !isdir(joinpath(F03_ROOT, "results", "F03"))
+
+        source = read(F03_RUN, String)
+        @test !occursin("ThermofluidExercise", source)
     end
 
     @test isfile(F03_LOG)
-    if isfile(F03_RUN)
-        source = read(F03_RUN, String)
-        @test !occursin("ThermofluidExercise", source)
+    if isfile(F03_LOG)
+        log = read(F03_LOG, String)
+        for heading in (
+            "## 手計算証明1：curl grad = 0",
+            "## 手計算証明2：div curl = 0",
+            "## 手計算証明3：div grad = Laplacian",
+            "## 数値検証",
+            "## 誤差比の解釈",
+        )
+            @test occursin(heading, log)
+        end
+        for proof_prompt in ("使用した定義", "添字の交換・縮約", "混合偏微分", "結論")
+            @test occursin(proof_prompt, log)
+        end
     end
 end
