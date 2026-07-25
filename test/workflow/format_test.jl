@@ -44,5 +44,22 @@ using .CourseFormatting
         @test read(provided, String) == before[provided]
         @test read(markdown, String) == before[markdown]
         @test format_repository(root; check=true, io=IOBuffer()) == 0
+
+        invalid = joinpath(root, "exercises", "F00", "invalid.jl")
+        write(invalid, "function broken(\n")
+        invalid_before = read(invalid, String)
+        after_invalid = joinpath(root, "exercises", "F00", "zz_after_invalid.jl")
+        write(after_invalid, "after_invalid(x)=x+1\n")
+
+        diagnostics = IOBuffer()
+        @test format_repository(root; check=true, io=diagnostics) == 1
+        @test occursin("exercises/F00/invalid.jl", String(take!(diagnostics)))
+        @test read(invalid, String) == invalid_before
+
+        diagnostics = IOBuffer()
+        @test format_repository(root; check=false, io=diagnostics) == 1
+        @test occursin("exercises/F00/invalid.jl", String(take!(diagnostics)))
+        @test read(invalid, String) == invalid_before
+        @test read(after_invalid, String) == "after_invalid(x) = x+1\n"
     end
 end

@@ -26,21 +26,46 @@ function student_julia_files(root=REPOSITORY_ROOT)
     sort!(files)
 end
 
+function format_file(path, root; overwrite, io)
+    try
+        JuliaFormatter.format(path; overwrite, throw_on_error=true)
+    catch error
+        println(
+            io,
+            "Julia formatting failed for ",
+            relpath(path, root),
+            ": ",
+            sprint(showerror, error),
+        )
+        nothing
+    end
+end
+
 function format_repository(root=REPOSITORY_ROOT; check=false, io=stdout)
     files = student_julia_files(root)
     if check
-        unformatted = filter(
-            path -> !JuliaFormatter.format(path; overwrite=false),
-            files,
-        )
-        isempty(unformatted) && return 0
-        println(io, "Julia code is not formatted:")
-        foreach(path -> println(io, "  ", relpath(path, root)), unformatted)
-        println(io, "\nRun:\n  julia --project=. scripts/format.jl")
-        return 1
+        unformatted = String[]
+        failed = false
+        for path in files
+            result = format_file(path, root; overwrite=false, io)
+            if isnothing(result)
+                failed = true
+            elseif !result
+                push!(unformatted, path)
+            end
+        end
+        if !isempty(unformatted)
+            println(io, "Julia code is not formatted:")
+            foreach(path -> println(io, "  ", relpath(path, root)), unformatted)
+            println(io, "\nRun:\n  julia --project=. scripts/format.jl")
+        end
+        return failed || !isempty(unformatted) ? 1 : 0
     end
-    foreach(path -> JuliaFormatter.format(path; overwrite=true), files)
-    return 0
+    failed = false
+    for path in files
+        isnothing(format_file(path, root; overwrite=true, io)) && (failed = true)
+    end
+    return failed ? 1 : 0
 end
 
 function main(arguments=ARGS)
