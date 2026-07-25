@@ -1,4 +1,5 @@
 using Test
+using TOML
 
 const N01_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const N01_RUN = joinpath(N01_ROOT, "exercises", "N01_linear_advection", "run.jl")
