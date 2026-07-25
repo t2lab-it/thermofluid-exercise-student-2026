@@ -1,16 +1,19 @@
 if !isdefined(Main, :F03VectorCalculus)
-    include(normpath(joinpath(
-        @__DIR__, "..", "F03_vector_calculus", "run.jl",
-    )))
+    include(normpath(joinpath(@__DIR__, "..", "F03_vector_calculus", "run.jl")))
 end
 
 module F04NumericalDifferentiation
 
 using Main.F03VectorCalculus: gradient_scalar, curl_vector, laplacian_scalar
 
-export forward_difference, backward_difference, centered_difference,
-    convergence_study, centered_partial, curl_gradient_residual,
-    divergence_curl_residual, laplacian_identity_residual,
+export forward_difference,
+    backward_difference,
+    centered_difference,
+    convergence_study,
+    centered_partial,
+    curl_gradient_residual,
+    divergence_curl_residual,
+    laplacian_identity_residual,
     verify_vector_identities
 
 function validate_scalar_input(x, h)
@@ -66,15 +69,20 @@ function convergence_study(f, derivative, x, spacings)
     backward_ratios = ratios(backward_errors)
     centered_ratios = ratios(centered_errors)
     (;
-        spacings, forward_errors, backward_errors, centered_errors,
-        forward_ratios, backward_ratios, centered_ratios,
+        spacings,
+        forward_errors,
+        backward_errors,
+        centered_errors,
+        forward_ratios,
+        backward_ratios,
+        centered_ratios,
         forward_orders = log2.(forward_ratios),
         backward_orders = log2.(backward_ratios),
         centered_orders = log2.(centered_ratios),
     )
 end
 
-function centered_partial(f, point, axis, h; differentiator=centered_difference)
+function centered_partial(f, point, axis, h; differentiator = centered_difference)
     validate_point(point)
     h isa Real && !(h isa Bool) && isfinite(h) && h > 0 ||
         throw(ArgumentError("h must be a finite positive real value"))
@@ -110,20 +118,20 @@ end
 function verify_vector_identities(n)
     n isa Integer && !(n isa Bool) && n >= 5 && isodd(n) ||
         throw(ArgumentError("n must be an odd integer of at least 5"))
-    coordinates = range(-1.0, 1.0; length=Int(n))
+    coordinates = range(-1.0, 1.0; length = Int(n))
     h = step(coordinates)
     curl_gradient = 0.0
     divergence_curl = 0.0
     laplacian_identity = 0.0
-    for x in coordinates[2:(end - 1)], y in coordinates[2:(end - 1)],
+    for x in coordinates[2:(end - 1)],
+        y in coordinates[2:(end - 1)],
         z in coordinates[2:(end - 1)]
+
         point = (x, y, z)
-        curl_gradient = max(curl_gradient,
-            maximum(abs, curl_gradient_residual(point, h)))
-        divergence_curl = max(divergence_curl,
-            abs(divergence_curl_residual(point, h)))
-        laplacian_identity = max(laplacian_identity,
-            abs(laplacian_identity_residual(point, h)))
+        curl_gradient = max(curl_gradient, maximum(abs, curl_gradient_residual(point, h)))
+        divergence_curl = max(divergence_curl, abs(divergence_curl_residual(point, h)))
+        laplacian_identity =
+            max(laplacian_identity, abs(laplacian_identity_residual(point, h)))
     end
     (; curl_gradient, divergence_curl, laplacian_identity)
 end
@@ -134,9 +142,14 @@ if abspath(PROGRAM_FILE) == @__FILE__
     reference_function(x) = sin(x) * exp(x)
     reference_derivative(x) = exp(x) * (sin(x) + cos(x))
     spacings = [0.2, 0.1, 0.05, 0.025]
-    println(F04NumericalDifferentiation.convergence_study(
-        reference_function, reference_derivative, 0.4, spacings,
-    ))
+    println(
+        F04NumericalDifferentiation.convergence_study(
+            reference_function,
+            reference_derivative,
+            0.4,
+            spacings,
+        ),
+    )
     println("n=9: ", F04NumericalDifferentiation.verify_vector_identities(9))
     println("n=17: ", F04NumericalDifferentiation.verify_vector_identities(17))
 end

@@ -1,8 +1,8 @@
 using Test
 
-const F04_STUDENT_RUN = normpath(joinpath(
-    @__DIR__, "..", "..", "exercises", "F04_numerical_differentiation", "run.jl",
-))
+const F04_STUDENT_RUN = normpath(
+    joinpath(@__DIR__, "..", "..", "exercises", "F04_numerical_differentiation", "run.jl"),
+)
 if !isdefined(Main, :F04NumericalDifferentiation)
     include(F04_STUDENT_RUN)
 end
