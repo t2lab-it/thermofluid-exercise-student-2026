@@ -1,5 +1,8 @@
 module F03VectorCalculus
 
+using ForwardDiff
+using LinearAlgebra
+
 export centered_partial, curl_gradient_residual, divergence_curl_residual,
     laplacian_identity_residual, verify_identities
 
@@ -24,6 +27,20 @@ curl_vector(point) = (
 )
 
 laplacian_scalar(point) = -scalar_field(point)
+
+function automatic_reference(point)
+    validate_point(point)
+    values = collect(float.(point))
+    gradient = Tuple(ForwardDiff.gradient(scalar_field, values))
+    jacobian = ForwardDiff.jacobian(p -> collect(vector_field(p)), values)
+    curl = (
+        jacobian[3, 2] - jacobian[2, 3],
+        jacobian[1, 3] - jacobian[3, 1],
+        jacobian[2, 1] - jacobian[1, 2],
+    )
+    hessian = ForwardDiff.hessian(scalar_field, values)
+    (; gradient, curl, laplacian=tr(hessian))
+end
 
 function validate_point(point)
     point isa Tuple && length(point) == 3 ||
@@ -113,6 +130,26 @@ end
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
+    reference_point = (0.2, -0.3, 0.4)
+    reference = F03VectorCalculus.automatic_reference(reference_point)
+    reference_errors = (
+        gradient=F03VectorCalculus.LinearAlgebra.norm(
+            collect(reference.gradient) -
+            collect(F03VectorCalculus.gradient_scalar(reference_point)),
+            Inf,
+        ),
+        curl=F03VectorCalculus.LinearAlgebra.norm(
+            collect(reference.curl) -
+            collect(F03VectorCalculus.curl_vector(reference_point)),
+            Inf,
+        ),
+        laplacian=abs(
+            reference.laplacian -
+            F03VectorCalculus.laplacian_scalar(reference_point),
+        ),
+    )
+    println("ForwardDiff reference errors = ", reference_errors)
+
     coarse = F03VectorCalculus.verify_identities(9)
     fine = F03VectorCalculus.verify_identities(17)
     ratios = (

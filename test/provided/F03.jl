@@ -84,6 +84,7 @@ const F03_LOG = joinpath(F03_ROOT, "learning_logs", "templates", "F03.md")
             "## 手計算証明1：curl grad = 0",
             "## 手計算証明2：div curl = 0",
             "## 手計算証明3：div grad = Laplacian",
+            "## 自動微分による参照値",
             "## 数値検証",
             "## 誤差比の解釈",
         )
@@ -91,6 +92,13 @@ const F03_LOG = joinpath(F03_ROOT, "learning_logs", "templates", "F03.md")
         end
         for proof_prompt in ("使用した定義", "添字の交換・縮約", "混合偏微分", "結論")
             @test occursin(proof_prompt, log)
+        end
+        for reference_prompt in (
+            "ForwardDiff",
+            "解析式との誤差",
+            "自動微分と有限差分の違い",
+        )
+            @test occursin(reference_prompt, log)
         end
     end
 end
