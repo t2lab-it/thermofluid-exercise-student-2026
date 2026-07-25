@@ -16,7 +16,7 @@ function student_greeting(name::AbstractString)::String
     "TODO: implement student_greeting"
 end
 
-function main(name::AbstractString="student"; io=stdout)
+function main(name::AbstractString = "student"; io = stdout)
     message = student_greeting(name)
     println(io, message)
     message

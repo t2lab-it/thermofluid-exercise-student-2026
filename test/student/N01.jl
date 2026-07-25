@@ -1,8 +1,7 @@
 using Test
 
-const N01_STUDENT_RUN = normpath(joinpath(
-    @__DIR__, "..", "..", "exercises", "N01_linear_advection", "run.jl",
-))
+const N01_STUDENT_RUN =
+    normpath(joinpath(@__DIR__, "..", "..", "exercises", "N01_linear_advection", "run.jl"))
 if !isdefined(Main, :N01LinearAdvection)
     include(N01_STUDENT_RUN)
 end

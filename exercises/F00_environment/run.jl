@@ -32,20 +32,22 @@ end
 
 function default_command_probe(program, arguments)
     executable = Sys.which(program)
-    isnothing(executable) && return (available=false, detail="$program was not found on PATH")
+    isnothing(executable) &&
+        return (available = false, detail = "$program was not found on PATH")
 
     stdout = IOBuffer()
     stderr = IOBuffer()
     command = Cmd([executable, arguments...])
-    process = run(pipeline(ignorestatus(command), stdout=stdout, stderr=stderr))
-    output = strip(join(filter(!isempty, [String(take!(stdout)), String(take!(stderr))]), '\n'))
+    process = run(pipeline(ignorestatus(command), stdout = stdout, stderr = stderr))
+    output =
+        strip(join(filter(!isempty, [String(take!(stdout)), String(take!(stderr))]), '\n'))
     detail = isempty(output) ? "$program exited with code $(process.exitcode)" : output
-    (available=process.exitcode == 0, detail=detail)
+    (available = process.exitcode == 0, detail = detail)
 end
 
 function collect_preflight(;
-    version_probe=() -> VERSION,
-    command_probe=default_command_probe,
+    version_probe = () -> VERSION,
+    command_probe = default_command_probe,
 )
     julia_version = version_probe()
     julia_check = ObservedCheck(
@@ -64,11 +66,12 @@ function collect_preflight(;
     )
 
     vscode_probe = command_probe("code", ["--version"])
-    extension_probe = vscode_probe.available ?
-        command_probe("code", ["--list-extensions"]) :
-        (available=false, detail="VS Code is unavailable")
+    extension_probe =
+        vscode_probe.available ? command_probe("code", ["--list-extensions"]) :
+        (available = false, detail = "VS Code is unavailable")
     extensions = lowercase.(strip.(split(String(extension_probe.detail), '\n')))
-    has_julia_extension = extension_probe.available && "julialang.language-julia" in extensions
+    has_julia_extension =
+        extension_probe.available && "julialang.language-julia" in extensions
     vscode_passed = vscode_probe.available && has_julia_extension
     vscode_observed = if !vscode_probe.available
         String(vscode_probe.detail)
@@ -79,15 +82,11 @@ function collect_preflight(;
     else
         "$(first(split(String(vscode_probe.detail), '\n'))); julialang.language-julia installed"
     end
-    vscode_action = vscode_probe.available ?
+    vscode_action =
+        vscode_probe.available ?
         "Install the Julia extension `julialang.language-julia` in VS Code, then run this check again." :
         "Install VS Code and enable its `code` command on PATH, then reopen the terminal."
-    vscode_check = ObservedCheck(
-        :vscode,
-        vscode_passed,
-        vscode_observed,
-        vscode_action,
-    )
+    vscode_check = ObservedCheck(:vscode, vscode_passed, vscode_observed, vscode_action)
 
     PreflightReport(julia_check, git_check, vscode_check)
 end
@@ -99,16 +98,21 @@ function parse_preflight_arguments(arguments)
     while index <= length(arguments)
         argument = arguments[index]
         if argument == "--confirm-github"
-            github_confirmed && throw(ArgumentError("--confirm-github may be specified only once"))
+            github_confirmed &&
+                throw(ArgumentError("--confirm-github may be specified only once"))
             github_confirmed = true
             index += 1
         elseif argument == "--confirm-agent"
-            isnothing(agent) || throw(ArgumentError("--confirm-agent may be specified only once"))
-            index == length(arguments) && throw(ArgumentError("--confirm-agent requires a product name"))
+            isnothing(agent) ||
+                throw(ArgumentError("--confirm-agent may be specified only once"))
+            index == length(arguments) &&
+                throw(ArgumentError("--confirm-agent requires a product name"))
             candidate = arguments[index + 1]
-            candidate in SUPPORTED_AGENTS || throw(ArgumentError(
-                "unsupported Agent '$candidate'; choose copilot, codex, or amazon-q",
-            ))
+            candidate in SUPPORTED_AGENTS || throw(
+                ArgumentError(
+                    "unsupported Agent '$candidate'; choose copilot, codex, or amazon-q",
+                ),
+            )
             agent = candidate
             index += 2
         else
@@ -124,35 +128,45 @@ function print_observed_check(io, label, check)
     check.passed || println(io, "    Action: $(check.action)")
 end
 
-function print_preflight(io, report; github_confirmed=false, agent=nothing)
+function print_preflight(io, report; github_confirmed = false, agent = nothing)
     println(io, "Machine-observed checks")
     print_observed_check(io, "Julia", report.julia)
     print_observed_check(io, "Git", report.git)
     print_observed_check(io, "VS Code", report.vscode)
     println(io)
     println(io, "Manual confirmations")
-    println(io, "  [$(github_confirmed ? "CONFIRMED" : "NOT CONFIRMED")] GitHub sign-in and repository access")
+    println(
+        io,
+        "  [$(github_confirmed ? "CONFIRMED" : "NOT CONFIRMED")] GitHub sign-in and repository access",
+    )
     agent_label = isnothing(agent) ? "none" : agent
-    println(io, "  [$(isnothing(agent) ? "NOT CONFIRMED" : "CONFIRMED")] Supported Agent: $agent_label")
+    println(
+        io,
+        "  [$(isnothing(agent) ? "NOT CONFIRMED" : "CONFIRMED")] Supported Agent: $agent_label",
+    )
     nothing
 end
 
 function run_f00_preflight(
     root;
-    report=collect_preflight(),
-    github_confirmed=false,
-    agent=nothing,
-    persist_progress=save_progress,
-    io=stdout,
+    report = collect_preflight(),
+    github_confirmed = false,
+    agent = nothing,
+    persist_progress = save_progress,
+    io = stdout,
 )
-    !isnothing(agent) && !(agent in SUPPORTED_AGENTS) &&
+    !isnothing(agent) &&
+        !(agent in SUPPORTED_AGENTS) &&
         throw(ArgumentError("unsupported Agent '$agent'"))
     print_preflight(io, report; github_confirmed, agent)
 
     observed_pass = report.julia.passed && report.git.passed && report.vscode.passed
     if !(observed_pass && github_confirmed && !isnothing(agent))
         println(io)
-        println(io, "Progress was not updated. Complete every setup action and both manual confirmations.")
+        println(
+            io,
+            "Progress was not updated. Complete every setup action and both manual confirmations.",
+        )
         return false
     end
 
@@ -163,14 +177,16 @@ function run_f00_preflight(
         println(io, "F00 is complete; current exercise remains F01.")
         return true
     end
-    state.current == "F00" && isempty(state.completed) || throw(ArgumentError(
-        "F00 preflight can only update an initial F00 progress state",
-    ))
+    state.current == "F00" && isempty(state.completed) ||
+        throw(ArgumentError("F00 preflight can only update an initial F00 progress state"))
 
     advanced = ProgressState(state.schema_version, state.ordered, ["F00"], "F01")
     persist_progress(progress_path, advanced)
     println(io)
-    println(io, "F00 is complete. Current exercise is now F01; do not create an F00 branch or PR.")
+    println(
+        io,
+        "F00 is complete. Current exercise is now F01; do not create an F00 branch or PR.",
+    )
     true
 end
 
@@ -179,5 +195,7 @@ end
 if abspath(PROGRAM_FILE) == @__FILE__
     F00Environment.print_preflight(stdout, F00Environment.collect_preflight())
     println()
-    println("This script is diagnostic only. Complete F00 through scripts/course.jl by following https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F00.html.")
+    println(
+        "This script is diagnostic only. Complete F00 through scripts/course.jl by following https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F00.html.",
+    )
 end
