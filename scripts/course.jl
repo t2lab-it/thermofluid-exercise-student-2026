@@ -8,7 +8,7 @@ using .ResultLimits
 
 const SLUGS = Dict(
     "F02" => "julia-arrays-and-tests",
-    "F03" => "numerical-primer",
+    "F03" => "vector-calculus",
     "N01" => "linear-advection",
     "N02" => "nonlinear-advection",
     "N03" => "diffusion",
