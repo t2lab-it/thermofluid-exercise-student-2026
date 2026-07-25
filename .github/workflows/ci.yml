@@ -29,5 +29,8 @@ jobs:
       - name: Instantiate environment
         run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
 
+      - name: Check Julia formatting
+        run: julia --project=. scripts/format.jl --check
+
       - name: Run tests
         run: julia --project=. -e 'using Pkg; Pkg.test()'
