@@ -7,6 +7,7 @@ if !isdefined(Main, :F03VectorCalculus)
 end
 
 @testset "F03 student-authored example" begin
-    # TODO(F03): replace this smoke check with one hand-computable derivative or residual.
-    @test isdefined(F03VectorCalculus, :centered_partial)
+    # STUDENT_TEST_REQUIRED(F03): use a point different from (0.2,-0.3,0.4)
+    # and compare gradient, curl, and Laplacian with automatic_reference.
+    @test true # Replace this placeholder with the required independent comparison.
 end

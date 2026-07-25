@@ -5,8 +5,8 @@ using TOML
 export ORDERED, ProgressState, load_progress, save_progress, tests_to_run, validate_transition
 
 const ORDERED = [
-    "F00", "F01", "F02", "F03",
-    "N01", "N02", "N03", "N04", "N05", "N06", "N07", "N08", "N09", "N10",
+    "F00", "F01", "F02", "F03", "F04",
+    "N01", "N02", "N03", "N04", "N05", "N06", "N07", "N08", "N09",
 ]
 const PROGRESS_KEYS = Set(["schema_version", "ordered", "completed", "current"])
 

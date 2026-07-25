@@ -5,8 +5,8 @@ include(joinpath(REPO_ROOT, "scripts", "lib", "CourseWorkflow.jl"))
 using .CourseWorkflow
 
 const EXPECTED_ORDER = [
-    "F00", "F01", "F02", "F03",
-    "N01", "N02", "N03", "N04", "N05", "N06", "N07", "N08", "N09", "N10",
+    "F00", "F01", "F02", "F03", "F04",
+    "N01", "N02", "N03", "N04", "N05", "N06", "N07", "N08", "N09",
 ]
 
 @testset "course progress" begin
@@ -22,6 +22,10 @@ const EXPECTED_ORDER = [
     @test tests_to_run(advanced) == ["F00", "F01", "F02"]
     @test validate_transition(advanced, "F03") === nothing
     @test_throws ArgumentError validate_transition(advanced, "N01")
+
+    f03_complete = ProgressState(1, EXPECTED_ORDER, ["F00", "F01", "F02"], "F03")
+    @test validate_transition(f03_complete, "F04") === nothing
+    @test_throws ArgumentError validate_transition(f03_complete, "N01")
 
     @testset "strict TOML validation" begin
         valid = Dict(
@@ -54,7 +58,7 @@ const EXPECTED_ORDER = [
             merge(valid, Dict("ordered" => EXPECTED_ORDER[1:end-1])),
             merge(valid, Dict("ordered" => vcat(EXPECTED_ORDER, ["N11"]))),
             merge(valid, Dict("ordered" => [EXPECTED_ORDER[2], EXPECTED_ORDER[1], EXPECTED_ORDER[3:end]...])),
-            merge(valid, Dict("ordered" => vcat(EXPECTED_ORDER[1:end-1], ["N09"]))),
+            merge(valid, Dict("ordered" => vcat(EXPECTED_ORDER[1:end-1], ["N08"]))),
             merge(valid, Dict("completed" => ["F00", "F00"])),
             merge(valid, Dict("completed" => ["F00", "F02"])),
             merge(valid, Dict("completed" => ["F00", "F01", "F02"])),
