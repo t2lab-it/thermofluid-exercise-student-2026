@@ -7,9 +7,7 @@ using TOML
 const DEFAULT_OUTPUT_DIR = normpath(joinpath(@__DIR__, "..", "..", "results", "N01"))
 
 """初期条件の引数がN01の実行時の入力条件を満たすか確認する。"""
-function validate_initial_condition_inputs(
-    x, base, plateau, plateau_start, plateau_end,
-)
+function validate_initial_condition_inputs(x, base, plateau, plateau_start, plateau_end)
     isempty(x) && throw(ArgumentError("xを空にすることはできません"))
     all(isfinite, x) || throw(ArgumentError("xの全要素を有限値にしてください"))
     all(isfinite, (base, plateau, plateau_start, plateau_end)) ||
@@ -59,9 +57,7 @@ function summary_section(scheme::String, result)
     initial_minimum, initial_maximum = extrema(result.u0)
     overshoot = max(result.maximum - initial_maximum, 0.0)
     undershoot = max(initial_minimum - result.minimum, 0.0)
-    tolerance = 100eps(Float64) * max(
-        abs(initial_minimum), abs(initial_maximum), 1.0,
-    )
+    tolerance = 100eps(Float64) * max(abs(initial_minimum), abs(initial_maximum), 1.0)
     return Dict(
         "scheme" => scheme,
         "cfl" => result.cfl,

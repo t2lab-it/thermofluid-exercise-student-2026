@@ -14,7 +14,8 @@
 
 - Julia 1.12.6
 - Git
-- VS CodeとJulia拡張`julialang.language-julia`
+- VS CodeとJulia拡張`julialang.language-julia`（必須）
+- Japanese Language Pack（任意）
 - GitHub Copilot、OpenAI Codex、Amazon Q Developerのいずれか一つ
 
 Windows、macOS、Linuxのローカル環境を対象にします。詳しい導入手順は公開教材の[F00 環境診断](https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F00.html)を参照してください。
@@ -50,6 +51,16 @@ julia --project=. scripts/course.jl preflight
 6. Actions、Files changed、完了条件を確認してセルフレビューする。
 7. Pull Requestをmergeし、ローカルの`main`を更新する。
 
+Pull Requestを作る前に、次の順で整形、diff確認、テストを実行します。
+
+```bash
+julia --project=. scripts/format.jl
+git diff
+julia --project=. -e 'using Pkg; Pkg.test()'
+```
+
+整形後の`git diff`を読み、意図しない変更がないことを確認してからcommitしてください。CIは整形状態を検査しますが、ファイルの編集やpushは行いません。
+
 ## 主要コマンド
 
 ```bash
@@ -64,6 +75,12 @@ julia --project=. scripts/course.jl status
 
 # 公式生成物のサイズ制限
 julia --project=. scripts/course.jl check-results
+
+# 学生が編集するJuliaコードを自動整形
+julia --project=. scripts/format.jl
+
+# CIと同じ整形状態の検査
+julia --project=. scripts/format.jl --check
 
 # 完了済み課題と現在課題のローカルテスト
 julia --project=. -e 'using Pkg; Pkg.test()'
@@ -91,7 +108,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 | `F00` | 環境診断 |
 | `F01` | 最初のPull Request |
 | `F02` | Juliaの配列・関数・テスト |
-| `F03` | 数値計算の準備 |
+| `F03` | ベクトル解析の公式と数値検証 |
 | `N01` | 1次元線形移流方程式 |
 
 `N02`以降の数値課題は順次追加します。

@@ -4,9 +4,9 @@ export mean_temperature, temperature_anomaly
 
 function validate_temperatures(values::AbstractVector{<:Real})
     isempty(values) && throw(ArgumentError("temperature values must not be empty"))
-    all(isfinite, values) || throw(ArgumentError(
-        "temperature values must all be finite; remove NaN and Inf values",
-    ))
+    all(isfinite, values) || throw(
+        ArgumentError("temperature values must all be finite; remove NaN and Inf values"),
+    )
     nothing
 end
 

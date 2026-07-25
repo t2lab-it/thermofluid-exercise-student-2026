@@ -1,7 +1,13 @@
 module F03VectorCalculus
 
-export centered_partial, curl_gradient_residual, divergence_curl_residual,
-    laplacian_identity_residual, verify_identities
+using ForwardDiff
+using LinearAlgebra
+
+export centered_partial,
+    curl_gradient_residual,
+    divergence_curl_residual,
+    laplacian_identity_residual,
+    verify_identities
 
 scalar_field(point) = sin(point[1]) * cos(point[2]) * exp(point[3])
 
@@ -24,6 +30,20 @@ curl_vector(point) = (
 )
 
 laplacian_scalar(point) = -scalar_field(point)
+
+function automatic_reference(point)
+    validate_point(point)
+    values = collect(float.(point))
+    gradient = Tuple(ForwardDiff.gradient(scalar_field, values))
+    jacobian = ForwardDiff.jacobian(p -> collect(vector_field(p)), values)
+    curl = (
+        jacobian[3, 2] - jacobian[2, 3],
+        jacobian[1, 3] - jacobian[3, 1],
+        jacobian[2, 1] - jacobian[1, 2],
+    )
+    hessian = ForwardDiff.hessian(scalar_field, values)
+    (; gradient, curl, laplacian = tr(hessian))
+end
 
 function validate_point(point)
     point isa Tuple && length(point) == 3 ||
@@ -77,7 +97,7 @@ function verify_identities(n::Integer)
     n isa Bool && throw(ArgumentError("n must be an odd integer of at least 5"))
     n >= 5 && isodd(n) || throw(ArgumentError("n must be an odd integer of at least 5"))
 
-    coordinates = range(-1.0, 1.0; length=Int(n))
+    coordinates = range(-1.0, 1.0; length = Int(n))
     h = step(coordinates)
     curl_gradient = 0.0
     divergence_curl = 0.0
@@ -87,41 +107,54 @@ function verify_identities(n::Integer)
         for y in coordinates[2:(end - 1)]
             for z in coordinates[2:(end - 1)]
                 point = (x, y, z)
-                curl_gradient = max(
-                    curl_gradient,
-                    maximum(abs, curl_gradient_residual(point, h)),
-                )
-                divergence_curl = max(
-                    divergence_curl,
-                    abs(divergence_curl_residual(point, h)),
-                )
-                laplacian_identity = max(
-                    laplacian_identity,
-                    abs(laplacian_identity_residual(point, h)),
-                )
+                curl_gradient =
+                    max(curl_gradient, maximum(abs, curl_gradient_residual(point, h)))
+                divergence_curl =
+                    max(divergence_curl, abs(divergence_curl_residual(point, h)))
+                laplacian_identity =
+                    max(laplacian_identity, abs(laplacian_identity_residual(point, h)))
             end
         end
     end
 
     (
-        curl_gradient=curl_gradient,
-        divergence_curl=divergence_curl,
-        laplacian_identity=laplacian_identity,
+        curl_gradient = curl_gradient,
+        divergence_curl = divergence_curl,
+        laplacian_identity = laplacian_identity,
     )
 end
 
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
+    reference_point = (0.2, -0.3, 0.4)
+    reference = F03VectorCalculus.automatic_reference(reference_point)
+    reference_errors = (
+        gradient = F03VectorCalculus.LinearAlgebra.norm(
+            collect(reference.gradient) -
+            collect(F03VectorCalculus.gradient_scalar(reference_point)),
+            Inf,
+        ),
+        curl = F03VectorCalculus.LinearAlgebra.norm(
+            collect(reference.curl) -
+            collect(F03VectorCalculus.curl_vector(reference_point)),
+            Inf,
+        ),
+        laplacian = abs(
+            reference.laplacian - F03VectorCalculus.laplacian_scalar(reference_point),
+        ),
+    )
+    println("ForwardDiff reference errors = ", reference_errors)
+
     coarse = F03VectorCalculus.verify_identities(9)
     fine = F03VectorCalculus.verify_identities(17)
     ratios = (
-        curl_gradient=iszero(fine.curl_gradient) ? Inf :
-            coarse.curl_gradient / fine.curl_gradient,
-        divergence_curl=iszero(fine.divergence_curl) ? Inf :
-            coarse.divergence_curl / fine.divergence_curl,
-        laplacian_identity=iszero(fine.laplacian_identity) ? Inf :
-            coarse.laplacian_identity / fine.laplacian_identity,
+        curl_gradient = iszero(fine.curl_gradient) ? Inf :
+                        coarse.curl_gradient / fine.curl_gradient,
+        divergence_curl = iszero(fine.divergence_curl) ? Inf :
+                          coarse.divergence_curl / fine.divergence_curl,
+        laplacian_identity = iszero(fine.laplacian_identity) ? Inf :
+                             coarse.laplacian_identity / fine.laplacian_identity,
     )
     println("coarse (n=9) = ", coarse)
     println("fine (n=17) = ", fine)

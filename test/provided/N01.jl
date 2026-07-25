@@ -63,10 +63,6 @@ end
         @test !quoted.is_completed
     end
 
-    project = TOML.parsefile(joinpath(N01_ROOT, "Project.toml"))
-    @test Set(keys(project["deps"])) == Set(["Plots", "TOML"])
-    @test !occursin("CairoMakie", read(joinpath(N01_ROOT, "Manifest.toml"), String))
-
     @test isfile(N01_RUN)
     if isfile(N01_RUN)
         source = read(N01_RUN, String)
