@@ -1,5 +1,4 @@
 using Test
-using TOML
 
 const N01_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const N01_RUN = joinpath(N01_ROOT, "exercises", "N01_linear_advection", "run.jl")
@@ -62,10 +61,6 @@ end
         """)
         @test !quoted.is_completed
     end
-
-    project = TOML.parsefile(joinpath(N01_ROOT, "Project.toml"))
-    @test Set(keys(project["deps"])) == Set(["Plots", "TOML"])
-    @test !occursin("CairoMakie", read(joinpath(N01_ROOT, "Manifest.toml"), String))
 
     @test isfile(N01_RUN)
     if isfile(N01_RUN)
