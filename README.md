@@ -1,6 +1,6 @@
 # 熱流体力学演習（2026）学生用リポジトリ
 
-2026年度「熱流体力学演習」で使用する、個人GitHub Classroom assignmentの学生用private template repositoryです。Juliaによる数値計算を題材に、テスト、Git／GitHub、学習ログ、Coding Agentを組み合わせて、結果を検証しながらコードを開発します。
+2026年度「熱流体力学演習」の個人用course repositoryを作るためのprivate template repositoryです。教員が履修者ごとに作成・割り当てたprivate repositoryで、Juliaによる数値計算、テスト、Git／GitHub、学習ログ、Coding Agentを組み合わせて、結果を検証しながらコードを開発します。
 
 ## はじめに
 
@@ -22,7 +22,7 @@ Windows、macOS、Linuxのローカル環境を対象にします。詳しい導
 
 ## 利用開始
 
-GitHub Classroomで作成された自分の課題リポジトリをcloneし、リポジトリrootで依存関係を準備します。
+GitHubのrepository招待を受諾した後、割り当てられた自分のprivate course repositoryをHTTPSでcloneし、リポジトリrootで依存関係を準備します。
 
 ```bash
 git clone <自分の課題リポジトリURL>
