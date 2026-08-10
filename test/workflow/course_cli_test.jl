@@ -2,6 +2,10 @@ using Test
 
 const CLI_REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const COURSE_SCRIPT = joinpath(CLI_REPO_ROOT, "scripts", "course.jl")
+const CLI_EXPECTED_UNITS = [
+    "F00", "F01", "F02", "F03", "F04",
+    "N01", "N02", "N03", "N04", "N05-N06", "N07", "N08-N09",
+]
 
 include(joinpath(CLI_REPO_ROOT, "scripts", "lib", "CourseWorkflow.jl"))
 using .CourseWorkflow
@@ -47,8 +51,8 @@ function make_course_repo(; current="F01", failing_current=false)
     )
     cp(joinpath(CLI_REPO_ROOT, "test", "runtests.jl"), joinpath(repo, "test", "runtests.jl"))
 
-    current_index = findfirst(==(current), ORDERED)
-    state = ProgressState(1, ORDERED, ORDERED[1:(current_index - 1)], current)
+    current_index = findfirst(==(current), ORDERED_UNITS)
+    state = ProgressState(2, ORDERED_UNITS, ORDERED_UNITS[1:(current_index - 1)], current)
     save_progress(joinpath(repo, "course_progress.toml"), state)
     for id in tests_to_run(state)
         write_task_test(
@@ -180,6 +184,31 @@ end
         @test !occursin(r"git (pull|push|fetch)", result.executed_commands)
     end
 
+    @testset "start advances N04 to the combined N05-N06 unit" begin
+        repo = make_course_repo(current="N04")
+        result = run_course(repo, ["start", "N05-N06"])
+        @test result.exitcode == 0
+        @test readchomp(`git -C $repo branch --show-current`) ==
+              "exercise/N05-N06-common-package-2d-advection"
+        state = load_progress(joinpath(repo, "course_progress.toml"))
+        @test state.current == "N05-N06"
+        @test state.completed == CLI_EXPECTED_UNITS[1:9]
+        @test tests_to_run(state)[end-1:end] == ["N05", "N06"]
+    end
+
+    @testset "start rejects the content ID N06 atomically" begin
+        repo = make_course_repo(current="N04")
+        before = progress_snapshot(repo)
+        branches_before = read(Cmd(["git", "-C", repo, "branch", "--format=%(refname:short)"]), String)
+        result = run_course(repo, ["start", "N06"])
+        @test result.exitcode != 0
+        @test occursin("N05-N06", result.stderr)
+        @test progress_snapshot(repo) == before
+        @test readchomp(`git -C $repo branch --show-current`) == "main"
+        branches_after = read(Cmd(["git", "-C", repo, "branch", "--format=%(refname:short)"]), String)
+        @test branches_after == branches_before
+    end
+
     @testset "help and other commands use portable local paths" begin
         repo = make_course_repo(current="F00")
         help_result = run_course(repo, ["--help"])
@@ -188,6 +217,8 @@ end
             @test occursin(command, help_result.stdout)
         end
         @test occursin(joinpath("scripts", "course.jl"), help_result.stdout)
+        @test occursin("start N05-N06", help_result.stdout)
+        @test occursin("start N08-N09", help_result.stdout)
         @test !occursin("PowerShell", help_result.stdout)
 
         @test run_course(repo, ["preflight"]).exitcode == 0
@@ -208,6 +239,9 @@ if get(ENV, "COURSE_SELECTION_PROBE_CHILD", "0") != "1"
         @test !occursin("TASK.md", readme)
         @test occursin("https://t2lab-it.github.io/thermofluid-exercise-2026/", readme)
         @test occursin("run.jl", readme)
+        @test occursin("N05-N06", readme)
+        @test occursin("N08-N09", readme)
+        @test occursin("1 branch、1 PR、1学習ログ", readme)
     end
     @testset "Git recorder is cross-platform and rejects automated history or network verbs" begin
         unix_recorder = try

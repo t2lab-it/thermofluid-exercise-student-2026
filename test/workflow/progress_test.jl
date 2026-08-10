@@ -4,33 +4,45 @@ const REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 include(joinpath(REPO_ROOT, "scripts", "lib", "CourseWorkflow.jl"))
 using .CourseWorkflow
 
-const EXPECTED_ORDER = [
+const EXPECTED_UNITS = [
     "F00", "F01", "F02", "F03", "F04",
-    "N01", "N02", "N03", "N04", "N05", "N06", "N07", "N08", "N09",
+    "N01", "N02", "N03", "N04", "N05-N06", "N07", "N08-N09",
 ]
 
 @testset "course progress" begin
-    @test ORDERED == EXPECTED_ORDER
+    @test ORDERED_UNITS == EXPECTED_UNITS
+    @test TASK_IDS_BY_UNIT["N05-N06"] == ["N05", "N06"]
+    @test TASK_IDS_BY_UNIT["N08-N09"] == ["N08", "N09"]
 
     state = load_progress(joinpath(REPO_ROOT, "course_progress.toml"))
-    @test state.schema_version == 1
+    @test state.schema_version == 2
     @test state.current == "F00"
     @test state.completed == String[]
     @test tests_to_run(state) == ["F00"]
 
-    advanced = ProgressState(1, ORDERED, ["F00", "F01"], "F02")
+    advanced = ProgressState(2, ORDERED_UNITS, ["F00", "F01"], "F02")
     @test tests_to_run(advanced) == ["F00", "F01", "F02"]
     @test validate_transition(advanced, "F03") === nothing
     @test_throws ArgumentError validate_transition(advanced, "N01")
 
-    f03_complete = ProgressState(1, EXPECTED_ORDER, ["F00", "F01", "F02"], "F03")
+    f03_complete = ProgressState(2, EXPECTED_UNITS, ["F00", "F01", "F02"], "F03")
     @test validate_transition(f03_complete, "F04") === nothing
     @test_throws ArgumentError validate_transition(f03_complete, "N01")
 
+    n05_n06 = ProgressState(
+        2,
+        EXPECTED_UNITS,
+        EXPECTED_UNITS[1:9],
+        "N05-N06",
+    )
+    @test tests_to_run(n05_n06)[end-1:end] == ["N05", "N06"]
+    @test validate_transition(n05_n06, "N07") === nothing
+    @test_throws ArgumentError validate_transition(n05_n06, "N06")
+
     @testset "strict TOML validation" begin
         valid = Dict(
-            "schema_version" => 1,
-            "ordered" => EXPECTED_ORDER,
+            "schema_version" => 2,
+            "ordered" => EXPECTED_UNITS,
             "completed" => ["F00", "F01"],
             "current" => "F02",
         )
@@ -53,12 +65,12 @@ const EXPECTED_ORDER = [
         end
 
         for invalid in (
-            merge(valid, Dict("schema_version" => 2)),
+            merge(valid, Dict("schema_version" => 1)),
             merge(valid, Dict("schema_version" => true)),
-            merge(valid, Dict("ordered" => EXPECTED_ORDER[1:end-1])),
-            merge(valid, Dict("ordered" => vcat(EXPECTED_ORDER, ["N11"]))),
-            merge(valid, Dict("ordered" => [EXPECTED_ORDER[2], EXPECTED_ORDER[1], EXPECTED_ORDER[3:end]...])),
-            merge(valid, Dict("ordered" => vcat(EXPECTED_ORDER[1:end-1], ["N08"]))),
+            merge(valid, Dict("ordered" => EXPECTED_UNITS[1:end-1])),
+            merge(valid, Dict("ordered" => vcat(EXPECTED_UNITS, ["N11"]))),
+            merge(valid, Dict("ordered" => [EXPECTED_UNITS[2], EXPECTED_UNITS[1], EXPECTED_UNITS[3:end]...])),
+            merge(valid, Dict("ordered" => vcat(EXPECTED_UNITS[1:end-1], ["N07"]))),
             merge(valid, Dict("completed" => ["F00", "F00"])),
             merge(valid, Dict("completed" => ["F00", "F02"])),
             merge(valid, Dict("completed" => ["F00", "F01", "F02"])),
@@ -75,7 +87,7 @@ const EXPECTED_ORDER = [
     @testset "atomic round trip" begin
         mktempdir() do directory
             path = joinpath(directory, "course_progress.toml")
-            expected = ProgressState(1, ORDERED, ["F00", "F01"], "F02")
+            expected = ProgressState(2, ORDERED_UNITS, ["F00", "F01"], "F02")
             @test save_progress(path, expected) === nothing
             actual = load_progress(path)
             @test actual.schema_version == expected.schema_version

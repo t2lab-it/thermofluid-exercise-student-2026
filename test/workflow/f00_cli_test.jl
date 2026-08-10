@@ -34,7 +34,7 @@ function f00_cli_root()
     root = mktempdir()
     save_progress(
         joinpath(root, "course_progress.toml"),
-        ProgressState(1, ORDERED, String[], "F00"),
+        ProgressState(2, ORDERED_UNITS, String[], "F00"),
     )
     root
 end

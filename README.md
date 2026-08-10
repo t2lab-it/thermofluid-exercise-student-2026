@@ -41,6 +41,12 @@ julia --project=. scripts/course.jl preflight
 - `F01`: 課題branchを手動で作り、最初のPull Requestを経験します。
 - `F02`以降: 前課題をmergeしてcleanな`main`へ戻った後、`course.jl start <ID>`で次の課題を開始します。
 
+後半の統合課題では内容IDを個別に維持し、進捗と提出は次の提出単位で扱います。
+- `N05`・`N06`は提出単位`N05-N06`として1 branch、1 PR、1学習ログで完了します。
+- `N08`・`N09`は提出単位`N08-N09`として1 branch、1 PR、1学習ログで完了します。
+
+開始時は個別の内容IDではなく、`course.jl start N05-N06`または`course.jl start N08-N09`を使います。
+
 通常課題は次の順で進めます。
 
 1. 公開教材の対応する課題ページを読み、指定された`run.jl`を確認する。

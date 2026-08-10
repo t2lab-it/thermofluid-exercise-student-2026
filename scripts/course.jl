@@ -14,11 +14,9 @@ const SLUGS = Dict(
     "N02" => "nonlinear-advection",
     "N03" => "diffusion",
     "N04" => "advection-diffusion",
-    "N05" => "common-package",
-    "N06" => "2d-advection",
+    "N05-N06" => "common-package-2d-advection",
     "N07" => "2d-advection-diffusion",
-    "N08" => "laplace",
-    "N09" => "poisson",
+    "N08-N09" => "laplace-poisson",
 )
 
 const USAGE = """
@@ -27,6 +25,10 @@ Usage:
   julia --project=. $(joinpath("scripts", "course.jl")) start <ID>
   julia --project=. $(joinpath("scripts", "course.jl")) status
   julia --project=. $(joinpath("scripts", "course.jl")) check-results
+
+Examples:
+  julia --project=. $(joinpath("scripts", "course.jl")) start N05-N06
+  julia --project=. $(joinpath("scripts", "course.jl")) start N08-N09
 """
 
 git_output(root, arguments...) = readchomp(Cmd(`git $(arguments)`; dir=root))
