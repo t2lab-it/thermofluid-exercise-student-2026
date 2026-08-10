@@ -12,10 +12,8 @@ include(joinpath(SLUG_REPO_ROOT, "scripts", "course.jl"))
         "N02" => "nonlinear-advection",
         "N03" => "diffusion",
         "N04" => "advection-diffusion",
-        "N05" => "common-package",
-        "N06" => "2d-advection",
+        "N05-N06" => "common-package-2d-advection",
         "N07" => "2d-advection-diffusion",
-        "N08" => "laplace",
-        "N09" => "poisson",
+        "N08-N09" => "laplace-poisson",
     )
 end
