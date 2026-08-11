@@ -27,10 +27,10 @@ jobs:
         uses: julia-actions/cache@v2
 
       - name: Instantiate environment
-        run: julia --project=. -e 'using Pkg; Pkg.instantiate()'
+        run: julia --project=. -e 'using Pkg; Pkg.instantiate(; allow_autoprecomp=false)'
 
       - name: Check Julia formatting
         run: julia --project=. scripts/format.jl --check
 
       - name: Run tests
-        run: julia --project=. -e 'using Pkg; Pkg.test()'
+        run: julia --startup-file=no --project=. test/runtests.jl
