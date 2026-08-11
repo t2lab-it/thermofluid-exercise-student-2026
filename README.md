@@ -106,6 +106,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 | `scratch/` | 一時的な試行。正式な成果物は置かない |
 | `scripts/` | 課題進行と生成物検査の補助コマンド |
 | `src/` | 後半課題で共通化するJuliaコード |
+| [`FINAL_PROJECT.md`](FINAL_PROJECT.md) | N09までの必要なcodeを別のproject repositoryへ移す手順 |
 
 ## 現在の収録範囲
 
