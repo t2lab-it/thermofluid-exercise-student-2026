@@ -42,6 +42,12 @@ const TOOLING_REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
     @test !isnothing(tests)
     @test first(instantiate) < first(format_check) < first(tests)
     @test occursin("julia --project=. scripts/format.jl --check", ci)
+    @test occursin(
+        "julia --project=. -e 'using Pkg; Pkg.instantiate(; allow_autoprecomp=false)'",
+        ci,
+    )
+    @test occursin("julia --startup-file=no --project=. test/runtests.jl", ci)
+    @test !occursin("Pkg.test()", ci)
 
     readme = read(readme_path, String)
     for marker in (
