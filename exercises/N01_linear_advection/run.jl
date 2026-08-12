@@ -4,9 +4,9 @@
 #
 # 読む順序と関数のつながり:
 #   rectangular_initial_condition → upwind_step! / centered_step!
-#   → apply_boundary! → simulate
+#   → apply_boundary! → simulate → main
 # `simulate`は初期条件、選択した1step更新、境界条件を順に組み合わせます。
-# 提供済みの`main`は二つの`simulate`と公式出力をまとめます。
+# `main`は二つの`simulate`を実行し、提供済みの出力処理を呼び出します。
 #
 # このファイルで出会うJuliaの記号:
 #   `value::T`は値の型を示し、`{<:Real}`は実数型の要素を許す指定です。
@@ -14,7 +14,7 @@
 #   `condition ? true_value : false_value`は条件で二つの値を選びます。
 #   `(x = x, u = u)`は名前付きの結果をまとめるnamed tupleです。
 #
-# `include("provided_support.jl")`は、入力検証と出力処理を読み込む
+# `include("provided_support.jl")`は、入力検証と出力の詳細を読み込む
 # 「おまじない」です。support fileを読解・編集する必要はありません。
 
 module N01LinearAdvection
@@ -219,6 +219,22 @@ function simulate(;
         minimum = minimum(u_old),
         maximum = maximum(u_old),
     )
+end
+
+"""N01の二つの比較計算を実行し、公式出力をすべて書き出す。"""
+function main(;
+    output_dir::AbstractString = DEFAULT_OUTPUT_DIR,
+    nx::Integer = 81,
+    c::Real = 1.0,
+    cfl::Real = 0.5,
+    t_final::Real = 0.5,
+)
+    upwind = simulate(; scheme = :upwind, nx, c, cfl, t_final)
+    centered = simulate(; scheme = :centered, nx, c, cfl, t_final)
+    summary_path = write_summary(output_dir, upwind, centered)
+    plot_paths = make_plots(output_dir, upwind, centered)
+    println("N01の出力を書き込みました: $(abspath(output_dir))")
+    return (; upwind, centered, summary_path, plot_paths)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

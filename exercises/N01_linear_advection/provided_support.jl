@@ -1,5 +1,5 @@
-# N01の実行時入力検証と公式出力を担当する教材提供ファイルです。
-# 数値計算の学習対象ではなく、受講生が編集する必要はありません。
+# N01の実行時入力検証と公式出力の詳細を担当する教材提供ファイルです。
+# 数値計算の学習対象ではなく、受講生が読解・編集する必要はありません。
 
 using Plots
 using TOML
@@ -111,20 +111,4 @@ function make_plots(output_dir::AbstractString, upwind, centered)
         savefig(path)
     end
     return (upwind = upwind_path, centered = centered_path)
-end
-
-"""N01の二つの比較計算を実行し、公式出力をすべて書き出す。"""
-function main(;
-    output_dir::AbstractString = DEFAULT_OUTPUT_DIR,
-    nx::Integer = 81,
-    c::Real = 1.0,
-    cfl::Real = 0.5,
-    t_final::Real = 0.5,
-)
-    upwind = simulate(; scheme = :upwind, nx, c, cfl, t_final)
-    centered = simulate(; scheme = :centered, nx, c, cfl, t_final)
-    summary_path = write_summary(output_dir, upwind, centered)
-    plot_paths = make_plots(output_dir, upwind, centered)
-    println("N01の出力を書き込みました: $(abspath(output_dir))")
-    return (; upwind, centered, summary_path, plot_paths)
 end

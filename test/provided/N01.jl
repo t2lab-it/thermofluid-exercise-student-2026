@@ -82,8 +82,9 @@ end
             "1次元線形移流方程式",
             "読む順序",
             "rectangular_initial_condition → upwind_step! / centered_step!",
-            "apply_boundary! → simulate",
+            "apply_boundary! → simulate → main",
             "provided_support.jl",
+            "入力検証と出力の詳細",
             "おまじない",
             "読解・編集する必要はありません",
             "value::T",
@@ -94,6 +95,8 @@ end
         )
             @test occursin(required_header, source)
         end
+
+        @test occursin(r"function\s+main\s*\(", source)
 
         @test count("TODO(N01):", source) == 3
         for required_todo in (
@@ -161,12 +164,13 @@ end
             for supplied_name in (
                 "validate_initial_condition_inputs", "validate_step_inputs",
                 "validate_boundary_inputs", "validate_simulation_inputs",
-                "summary_section", "write_summary", "make_plots", "main",
+                "summary_section", "write_summary", "make_plots",
             )
                 @test occursin("function " * supplied_name, support)
             end
+            @test !occursin(r"function\s+main\s*\(", support)
             for supplied_copy in (
-                "実行時の入力条件", "受講生が編集する必要はありません",
+                "実行時の入力条件", "受講生が読解・編集する必要はありません",
                 "summary.toml", "upwind.png", "centered-euler.png",
             )
                 @test occursin(supplied_copy, support)
