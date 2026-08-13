@@ -12,9 +12,9 @@ vector_field(point) = (
 
 function validate_point(point)
     point isa Tuple && length(point) == 3 ||
-        throw(ArgumentError("point must be a three-element tuple"))
+        throw(ArgumentError("点は3要素のタプルで指定してください"))
     all(value -> value isa Real && isfinite(value), point) ||
-        throw(ArgumentError("point coordinates must be finite real values"))
+        throw(ArgumentError("点の座標は有限な実数にしてください"))
     nothing
 end
 

@@ -19,13 +19,13 @@ const SLUGS = Dict(
 )
 
 const USAGE = """
-Usage:
+使い方:
   julia --project=. $(joinpath("scripts", "course.jl")) preflight [--confirm-github --confirm-agent <copilot|codex|amazon-q>]
   julia --project=. $(joinpath("scripts", "course.jl")) start <ID>
   julia --project=. $(joinpath("scripts", "course.jl")) status
   julia --project=. $(joinpath("scripts", "course.jl")) check-results
 
-Examples:
+例:
   julia --project=. $(joinpath("scripts", "course.jl")) start N05-N06
   julia --project=. $(joinpath("scripts", "course.jl")) start F03-F04
   julia --project=. $(joinpath("scripts", "course.jl")) start N08-N09
@@ -36,9 +36,9 @@ git_output(root, arguments...) = readchomp(Cmd(`git $(arguments)`; dir=root))
 function require_preflight(root)
     branch = git_output(root, "branch", "--show-current")
     branch == "main" ||
-        throw(ArgumentError("course commands must start on main; current branch is $branch"))
+        throw(ArgumentError("courseコマンドはmainから開始してください。現在のbranch: $branch"))
     isempty(git_output(root, "status", "--porcelain")) ||
-        throw(ArgumentError("working tree must be clean before starting an exercise"))
+        throw(ArgumentError("作業ツリーに未commitの変更があります。git status --shortで確認してください"))
     nothing
 end
 
@@ -61,15 +61,15 @@ function require_local_tests(root)
     ]); dir=root)
     process = run(ignorestatus(command))
     process.exitcode == 0 ||
-        throw(ArgumentError("local tests failed; fix the current exercise before advancing"))
+        throw(ArgumentError("ローカルテストが失敗しました。test/runtests.jlを確認してから次へ進んでください"))
     nothing
 end
 
 function show_status(root)
     state = load_progress(joinpath(root, "course_progress.toml"))
-    completed = isempty(state.completed) ? "none" : join(state.completed, ", ")
-    println("Current: $(state.current)")
-    println("Completed: $completed")
+    completed = isempty(state.completed) ? "なし" : join(state.completed, ", ")
+    println("現在の提出単位: $(state.current)")
+    println("完了済み: $completed")
 end
 
 function start_exercise(root, id; persist_progress=save_progress)
@@ -82,7 +82,7 @@ function start_exercise(root, id; persist_progress=save_progress)
 
     slug = get(SLUGS, id, nothing)
     isnothing(slug) &&
-        throw(ArgumentError("no exercise branch slug is configured for $id"))
+        throw(ArgumentError("課題ID $id のbranch slugが設定されていません"))
     branch = "exercise/$id-$slug"
     run(Cmd(`git switch -c $branch`; dir=root))
     advanced = ProgressState(
@@ -103,10 +103,10 @@ function start_exercise(root, id; persist_progress=save_progress)
         rethrow()
     end
 
-    println("Started $id on $branch.")
-    println("When your work is committed, publish it with:")
+    println("$(id)をbranch $(branch)で開始しました。")
+    println("作業をcommitしたら、次のコマンドでpushしてください:")
     println("  git push -u origin $branch")
-    println("Then open a pull request for $branch in your hosting service.")
+    println("その後、ホスティングサービスで$(branch)のpull requestを作成してください。")
 end
 
 function main(
@@ -139,11 +139,11 @@ function main(
         show_status(root)
     elseif command == "check-results" && length(arguments) == 1
         require_result_limits(root)
-        println("Result size limits passed.")
+        println("結果ファイルのサイズ上限を確認しました。")
     elseif command == "start" && length(arguments) == 2
         start_exercise(root, arguments[2])
     else
-        throw(ArgumentError("invalid command\n$USAGE"))
+        throw(ArgumentError("無効なコマンドです\n$USAGE"))
     end
     0
 end
@@ -152,7 +152,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
     try
         exit(main())
     catch exception
-        println(stderr, "error: ", sprint(showerror, exception))
+        println(stderr, "エラー: ", sprint(showerror, exception))
         exit(1)
     end
 end

@@ -8,6 +8,6 @@ if !isdefined(Main, :F02JuliaArraysAndTests)
 end
 
 @testset "F02 student-authored example" begin
-    # TODO(F02): replace this smoke check with one hand-computable example.
+    # TODO(F02): この簡易確認を、手計算できる例1件へ置き換える。
     @test isdefined(F02JuliaArraysAndTests, :mean_temperature)
 end

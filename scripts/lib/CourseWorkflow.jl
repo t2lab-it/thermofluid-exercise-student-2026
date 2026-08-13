@@ -24,41 +24,41 @@ struct ProgressState
 end
 
 function _string_vector(value, field)
-    value isa AbstractVector || throw(ArgumentError("$field must be an array of submission units"))
+    value isa AbstractVector || throw(ArgumentError("`$field`は提出単位の配列である必要があります"))
     all(item -> item isa AbstractString, value) ||
-        throw(ArgumentError("$field must contain only string submission units"))
+        throw(ArgumentError("`$field`には文字列の提出単位だけを指定してください"))
     String[String(item) for item in value]
 end
 
 function _validate(state::ProgressState)
     state.schema_version == 2 ||
-        throw(ArgumentError("unsupported progress schema version: $(state.schema_version)"))
+        throw(ArgumentError("未対応の`schema_version`です: $(state.schema_version)"))
     state.ordered == ORDERED_UNITS ||
-        throw(ArgumentError("ordered must contain every submission unit exactly once in course order"))
+        throw(ArgumentError("`ordered`には全提出単位を授業順で1回ずつ指定してください"))
     length(unique(state.completed)) == length(state.completed) ||
-        throw(ArgumentError("completed contains duplicate submission units"))
+        throw(ArgumentError("`completed`に重複した提出単位があります"))
     state.current in state.ordered ||
-        throw(ArgumentError("unknown current submission unit: $(state.current)"))
+        throw(ArgumentError("`current`に不明な提出単位があります: $(state.current)"))
     state.current in state.completed &&
-        throw(ArgumentError("current submission unit must not also be completed"))
+        throw(ArgumentError("`current`の提出単位を`completed`にも含めることはできません"))
 
     current_index = findfirst(==(state.current), state.ordered)
     expected_completed = state.ordered[1:(current_index - 1)]
     state.completed == expected_completed ||
-        throw(ArgumentError("completed submission units must be the ordered prefix before current"))
+        throw(ArgumentError("`completed`には`current`より前の提出単位を順番どおり指定してください"))
     nothing
 end
 
 function load_progress(path)
     values = TOML.parsefile(path)
     Set(keys(values)) == PROGRESS_KEYS ||
-        throw(ArgumentError("progress file must contain exactly: schema_version, ordered, completed, current"))
+        throw(ArgumentError("進捗ファイルには`schema_version`、`ordered`、`completed`、`current`だけを含めてください"))
 
     schema_version = values["schema_version"]
     schema_version isa Integer && !(schema_version isa Bool) ||
-        throw(ArgumentError("schema_version must be an integer"))
+        throw(ArgumentError("`schema_version`は整数である必要があります"))
     current = values["current"]
-    current isa AbstractString || throw(ArgumentError("current must be a string submission unit"))
+    current isa AbstractString || throw(ArgumentError("`current`は文字列の提出単位である必要があります"))
 
     state = ProgressState(
         Int(schema_version),
@@ -100,10 +100,10 @@ function validate_transition(state::ProgressState, id)
     _validate(state)
     current_index = findfirst(==(state.current), state.ordered)
     current_index == length(state.ordered) &&
-        throw(ArgumentError("$(state.current) is the final submission unit"))
+        throw(ArgumentError("$(state.current)は最後の提出単位です"))
     expected = state.ordered[current_index + 1]
     id == expected ||
-        throw(ArgumentError("next submission unit must be $expected, got $id"))
+        throw(ArgumentError("次の提出単位は`$expected`です。指定された値: `$id`"))
     nothing
 end
 
