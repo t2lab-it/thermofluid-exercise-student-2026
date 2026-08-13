@@ -103,8 +103,7 @@ function parse_preflight_arguments(arguments)
             github_confirmed = true
             index += 1
         elseif argument == "--confirm-agent"
-            isnothing(agent) ||
-                throw(ArgumentError("--confirm-agentは1回だけ指定できます"))
+            isnothing(agent) || throw(ArgumentError("--confirm-agentは1回だけ指定できます"))
             index == length(arguments) &&
                 throw(ArgumentError("--confirm-agentには製品名が必要です"))
             candidate = arguments[index + 1]
