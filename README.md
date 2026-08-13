@@ -12,6 +12,7 @@
 課題に取り組むときは、次の3つを使い分けてください。
 
 - [公開教材サイト](https://t2lab-it.github.io/thermofluid-exercise-2026/): 数式、背景、詳しい課題説明の正本
+- [AI利用と安全](https://t2lab-it.github.io/thermofluid-exercise-2026/guides/ai-usage.html): 全課題・最終プロジェクト共通の正本
 - このREADME: リポジトリ全体の使い方と共通ワークフロー
 - `exercises/<課題>/run.jl`: 公開教材の課題ページで指定された実装・実行対象
 
@@ -131,8 +132,6 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 
 ## 注意事項
 
-- アクセストークン、パスワード、秘密鍵、不要な個人情報をcommitしないでください。
 - `test/provided/`の提供テストを削除したり、判定を弱めたりしないでください。
 - 公式`run.jl`が`results/<課題ID>/`へ生成した成果物は、サイズ制限を確認してcommitします。
 - `scratch/`は一時作業用です。提出対象の実装や結果の正本にしません。
-- AIエージェントの提案は、diff、テスト、数値結果を自分で確認し、採用・修正・却下の理由を学習ログへ記録してください。
