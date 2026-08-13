@@ -33,7 +33,7 @@ end
 function default_command_probe(program, arguments)
     executable = Sys.which(program)
     isnothing(executable) &&
-        return (available = false, detail = "$program was not found on PATH")
+        return (available = false, detail = "$(program)がPATH上に見つかりません")
 
     stdout = IOBuffer()
     stderr = IOBuffer()
@@ -41,7 +41,7 @@ function default_command_probe(program, arguments)
     process = run(pipeline(ignorestatus(command), stdout = stdout, stderr = stderr))
     output =
         strip(join(filter(!isempty, [String(take!(stdout)), String(take!(stderr))]), '\n'))
-    detail = isempty(output) ? "$program exited with code $(process.exitcode)" : output
+    detail = isempty(output) ? "$(program)の終了コード: $(process.exitcode)" : output
     (available = process.exitcode == 0, detail = detail)
 end
 
@@ -54,7 +54,7 @@ function collect_preflight(;
         :julia,
         julia_version == REQUIRED_JULIA_VERSION,
         string(julia_version),
-        "Install and select Julia 1.12.6 with Juliaup, then run this check again.",
+        "JuliaupでJulia 1.12.6をインストールして選択し、この確認を再実行してください。",
     )
 
     git_probe = command_probe("git", ["--version"])
@@ -62,13 +62,13 @@ function collect_preflight(;
         :git,
         git_probe.available,
         String(git_probe.detail),
-        "Install Git and make sure the Git command is available on PATH.",
+        "Gitをインストールし、GitコマンドをPATHから実行できることを確認してください。",
     )
 
     vscode_probe = command_probe("code", ["--version"])
     extension_probe =
         vscode_probe.available ? command_probe("code", ["--list-extensions"]) :
-        (available = false, detail = "VS Code is unavailable")
+        (available = false, detail = "VS Codeを利用できません")
     extensions = lowercase.(strip.(split(String(extension_probe.detail), '\n')))
     has_julia_extension =
         extension_probe.available && "julialang.language-julia" in extensions
@@ -76,16 +76,16 @@ function collect_preflight(;
     vscode_observed = if !vscode_probe.available
         String(vscode_probe.detail)
     elseif !extension_probe.available
-        "$(first(split(String(vscode_probe.detail), '\n'))); extension list unavailable"
+        "$(first(split(String(vscode_probe.detail), '\n'))); 拡張機能一覧を取得できません"
     elseif !has_julia_extension
-        "$(first(split(String(vscode_probe.detail), '\n'))); Julia extension not found"
+        "$(first(split(String(vscode_probe.detail), '\n'))); Julia拡張機能が見つかりません"
     else
-        "$(first(split(String(vscode_probe.detail), '\n'))); julialang.language-julia installed"
+        "$(first(split(String(vscode_probe.detail), '\n'))); julialang.language-juliaを導入済みです"
     end
     vscode_action =
         vscode_probe.available ?
-        "Install the Julia extension `julialang.language-julia` in VS Code, then run this check again." :
-        "Install VS Code and enable its `code` command on PATH, then reopen the terminal."
+        "VS CodeへJulia拡張機能`julialang.language-julia`をインストールし、この確認を再実行してください。" :
+        "VS Codeをインストールして`code`コマンドをPATHで有効にし、端末を開き直してください。"
     vscode_check = ObservedCheck(:vscode, vscode_passed, vscode_observed, vscode_action)
 
     PreflightReport(julia_check, git_check, vscode_check)
@@ -99,24 +99,23 @@ function parse_preflight_arguments(arguments)
         argument = arguments[index]
         if argument == "--confirm-github"
             github_confirmed &&
-                throw(ArgumentError("--confirm-github may be specified only once"))
+                throw(ArgumentError("--confirm-githubは1回だけ指定できます"))
             github_confirmed = true
             index += 1
         elseif argument == "--confirm-agent"
-            isnothing(agent) ||
-                throw(ArgumentError("--confirm-agent may be specified only once"))
+            isnothing(agent) || throw(ArgumentError("--confirm-agentは1回だけ指定できます"))
             index == length(arguments) &&
-                throw(ArgumentError("--confirm-agent requires a product name"))
+                throw(ArgumentError("--confirm-agentには製品名が必要です"))
             candidate = arguments[index + 1]
             candidate in SUPPORTED_AGENTS || throw(
                 ArgumentError(
-                    "unsupported Agent '$candidate'; choose copilot, codex, or amazon-q",
+                    "未対応のAIエージェント`$candidate`です。copilot、codex、amazon-qから選んでください",
                 ),
             )
             agent = candidate
             index += 2
         else
-            throw(ArgumentError("unknown preflight argument: $argument"))
+            throw(ArgumentError("`preflight`の不明な引数です: $argument"))
         end
     end
     (; github_confirmed, agent)
@@ -125,24 +124,24 @@ end
 function print_observed_check(io, label, check)
     status = check.passed ? "PASS" : "NEEDS SETUP"
     println(io, "  [$status] $label: $(check.observed)")
-    check.passed || println(io, "    Action: $(check.action)")
+    check.passed || println(io, "    対応: $(check.action)")
 end
 
 function print_preflight(io, report; github_confirmed = false, agent = nothing)
-    println(io, "Machine-observed checks")
+    println(io, "端末で確認した項目")
     print_observed_check(io, "Julia", report.julia)
     print_observed_check(io, "Git", report.git)
     print_observed_check(io, "VS Code", report.vscode)
     println(io)
-    println(io, "Manual confirmations")
+    println(io, "手動確認")
     println(
         io,
-        "  [$(github_confirmed ? "CONFIRMED" : "NOT CONFIRMED")] GitHub sign-in and repository access",
+        "  [$(github_confirmed ? "CONFIRMED" : "NOT CONFIRMED")] GitHubへのサインインとリポジトリへのアクセス",
     )
-    agent_label = isnothing(agent) ? "none" : agent
+    agent_label = isnothing(agent) ? "未指定" : agent
     println(
         io,
-        "  [$(isnothing(agent) ? "NOT CONFIRMED" : "CONFIRMED")] Supported Agent: $agent_label",
+        "  [$(isnothing(agent) ? "NOT CONFIRMED" : "CONFIRMED")] 正式対応AIエージェント: $agent_label",
     )
     nothing
 end
@@ -157,7 +156,7 @@ function run_f00_preflight(
 )
     !isnothing(agent) &&
         !(agent in SUPPORTED_AGENTS) &&
-        throw(ArgumentError("unsupported Agent '$agent'"))
+        throw(ArgumentError("未対応のAIエージェント`$agent`です"))
     print_preflight(io, report; github_confirmed, agent)
 
     observed_pass = report.julia.passed && report.git.passed && report.vscode.passed
@@ -165,7 +164,7 @@ function run_f00_preflight(
         println(io)
         println(
             io,
-            "Progress was not updated. Complete every setup action and both manual confirmations.",
+            "F00の進捗は更新されませんでした。すべての対応と2項目の手動確認を完了してください。",
         )
         return false
     end
@@ -174,18 +173,18 @@ function run_f00_preflight(
     state = load_progress(progress_path)
     if state.current == "F01" && state.completed == ["F00"]
         println(io)
-        println(io, "F00 is complete; current exercise remains F01.")
+        println(io, "F00は完了済みです。現在の課題はF01のままです。")
         return true
     end
     state.current == "F00" && isempty(state.completed) ||
-        throw(ArgumentError("F00 preflight can only update an initial F00 progress state"))
+        throw(ArgumentError("F00の事前診断は初期F00進捗だけを更新できます"))
 
     advanced = ProgressState(state.schema_version, state.ordered, ["F00"], "F01")
     persist_progress(progress_path, advanced)
     println(io)
     println(
         io,
-        "F00 is complete. Current exercise is now F01; do not create an F00 branch or PR.",
+        "F00が完了しました。現在の課題はF01です。F00用のbranchやPRは作成しないでください。",
     )
     true
 end
@@ -196,6 +195,6 @@ if abspath(PROGRAM_FILE) == @__FILE__
     F00Environment.print_preflight(stdout, F00Environment.collect_preflight())
     println()
     println(
-        "This script is diagnostic only. Complete F00 through scripts/course.jl by following https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F00.html.",
+        "このスクリプトは診断専用です。https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F00.html に従い、scripts/course.jlからF00を完了してください。",
     )
 end

@@ -7,7 +7,7 @@ if !isdefined(Main, :F03VectorCalculus)
 end
 
 @testset "F03 student-authored example" begin
-    # STUDENT_TEST_REQUIRED(F03): use a point different from (0.2,-0.3,0.4)
-    # and compare gradient, curl, and Laplacian with automatic_reference.
-    @test true # Replace this placeholder with the required independent comparison.
+    # STUDENT_TEST_REQUIRED(F03): (0.2,-0.3,0.4)とは異なる点を使い、
+    # 勾配、回転、ラプラシアンを`automatic_reference`と比較する。
+    @test true # この仮実装を、指定された独立な比較へ置き換える。
 end

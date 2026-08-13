@@ -32,7 +32,7 @@ function format_file(path, root; overwrite, io)
     catch error
         println(
             io,
-            "Julia formatting failed for ",
+            "Juliaコードの整形に失敗しました: ",
             relpath(path, root),
             ": ",
             sprint(showerror, error),
@@ -55,9 +55,9 @@ function format_repository(root=REPOSITORY_ROOT; check=false, io=stdout)
             end
         end
         if !isempty(unformatted)
-            println(io, "Julia code is not formatted:")
+            println(io, "整形されていないJuliaコードがあります:")
             foreach(path -> println(io, "  ", relpath(path, root)), unformatted)
-            println(io, "\nRun:\n  julia --project=. scripts/format.jl")
+            println(io, "\n次を実行してください:\n  julia --project=. scripts/format.jl")
         end
         return failed || !isempty(unformatted) ? 1 : 0
     end
@@ -71,7 +71,7 @@ end
 function main(arguments=ARGS)
     arguments == String[] && return format_repository()
     arguments == ["--check"] && return format_repository(; check=true)
-    println(stderr, "usage: julia --project=. scripts/format.jl [--check]")
+    println(stderr, "使用方法: julia --project=. scripts/format.jl [--check]")
     return 2
 end
 

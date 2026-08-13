@@ -8,6 +8,6 @@ if !isdefined(Main, :F01FirstPullRequest)
 end
 
 @testset "F01 student-authored examples" begin
-    # TODO(F01): replace this smoke check with one greeting example of your own.
+    # TODO(F01): この簡易確認を、自分で選んだ挨拶の例1件へ置き換える。
     @test isdefined(F01FirstPullRequest, :student_greeting)
 end

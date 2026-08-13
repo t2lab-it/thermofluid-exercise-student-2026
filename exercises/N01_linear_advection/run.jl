@@ -5,17 +5,17 @@
 # 読む順序と関数のつながり:
 #   rectangular_initial_condition → upwind_step! / centered_step!
 #   → apply_boundary! → simulate → main
-# `simulate`は初期条件、選択した1step更新、境界条件を順に組み合わせます。
+# `simulate`は初期条件、選択した1ステップの更新、境界条件を順に組み合わせます。
 # `main`は二つの`simulate`を実行し、提供済みの出力処理を呼び出します。
 #
 # このファイルで出会うJuliaの記号:
 #   `value::T`は値の型を示し、`{<:Real}`は実数型の要素を許す指定です。
 #   `:upwind`は名前を表すSymbol、`===`は二つがまったく同じかを比べます。
 #   `condition ? true_value : false_value`は条件で二つの値を選びます。
-#   `(x = x, u = u)`は名前付きの結果をまとめるnamed tupleです。
+#   `(x = x, u = u)`は名前付きの結果をまとめる名前付きタプルです。
 #
 # `include("provided_support.jl")`は、入力検証と出力の詳細を読み込む
-# 「おまじない」です。support fileを読解・編集する必要はありません。
+# 「おまじない」です。この補助ファイルを読解・編集する必要はありません。
 
 module N01LinearAdvection
 
@@ -64,7 +64,7 @@ end
 """
     upwind_step!(u_new, u_old, c, dt, dx)
 
-正の移流速度に対する風上差分と陽Euler法で1step進める。
+正の移流速度に対する風上差分と陽Euler法で1ステップ進める。
 `u_old`だけを読み、計算結果を`u_new`へ書き換える。`u_old`は変更しない。
 
 # 引数
@@ -88,7 +88,7 @@ function upwind_step!(u_new, u_old, c::Real, dt::Real, dx::Real)
     for i in 2:(length(u_old) - 1)
         #=
         TODO(N01):
-        風上差分と陽Euler法による1step更新を実装する。
+        風上差分と陽Euler法による1ステップの更新を実装する。
         授業ページの式を、iとi - 1の添字を使ってコードへ写す。
         =#
         u_new[i] = u_old[i]
@@ -99,7 +99,7 @@ end
 """
     centered_step!(u_new, u_old, c, dt, dx)
 
-意図的に不安定な中心差分と陽Euler法で1step進める。
+意図的に不安定な中心差分と陽Euler法で1ステップ進める。
 `u_old`だけを読み、計算結果を`u_new`へ書き換える。`u_old`は変更しない。
 
 # 引数
@@ -123,7 +123,7 @@ function centered_step!(u_new, u_old, c::Real, dt::Real, dx::Real)
     for i in 2:(length(u_old) - 1)
         #=
         TODO(N01):
-        中心差分と陽Euler法による1step更新を実装する。
+        中心差分と陽Euler法による1ステップの更新を実装する。
         授業ページの式を、i - 1とi + 1の添字を使ってコードへ写す。
         =#
         u_new[i] = u_old[i]
@@ -136,7 +136,7 @@ end
 """
     apply_boundary!(u; left_value)
 
-1step更新後の配列`u`へ境界条件を適用する。
+1ステップ更新後の配列`u`へ境界条件を適用する。
 左端を`left_value`に固定し、右端を左隣と同じ値にしてゼロ勾配を表す。
 
 # 引数
@@ -159,24 +159,24 @@ end
     simulate(; scheme, nx, c, cfl, t_final)
 
 指定した差分法でN01の時間発展を計算する。
-初期条件を作り、選択した1step関数と境界条件を各stepで順に適用する。
+初期条件を作り、選択した1ステップ関数と境界条件を各ステップで順に適用する。
 
 # 引数
 
 - `scheme`: `:upwind`または`:centered`。
 - `nx`: 0から2までに置く格子点数。
 - `c`: 正の移流速度。
-- `cfl`: 1stepで進む格子幅の割合。
+- `cfl`: 1ステップで進む格子幅の割合。
 - `t_final`: 計算する最終時刻。
 
 # 戻り値
 
-次のfieldを持つnamed tupleを返す。
+次のフィールドを持つ名前付きタプルを返す。
 
 - `x`: 座標。
 - `u0`: 初期値。
 - `u`: 最終時刻の値。
-- `dx`, `dt`, `steps`, `cfl`: 格子幅、時間刻み、step数、実効CFL。
+- `dx`, `dt`, `steps`, `cfl`: 格子幅、時間刻み、ステップ数、実効CFL。
 - `minimum`, `maximum`: 最終値の最小値と最大値。
 """
 function simulate(;
@@ -198,7 +198,7 @@ function simulate(;
     u0 = rectangular_initial_condition(x)
     u_old = copy(u0)
     u_new = similar(u_old)
-    # schemeに応じて、時間loopで呼ぶ1step関数を選びます。
+    # `scheme`に応じて、時間ループで呼ぶ1ステップ関数を選びます。
     step! = scheme === :upwind ? upwind_step! : centered_step!
 
     # 各ステップで新しい値を計算し、境界条件を適用してから二つのバッファを交換する。

@@ -13,6 +13,8 @@ end
 using .F00Environment
 using .CourseWorkflow
 
+contains_japanese(text::AbstractString) = occursin(r"[ぁ-んァ-ヶ一-龠]", text)
+
 function f00_report(; julia_ok=true, git_ok=true, vscode_ok=true, julia_extension_ok=true)
     versions = () -> julia_ok ? v"1.12.6" : v"1.12.5"
     commands = function (program, arguments)
@@ -50,20 +52,24 @@ end
 
         wrong_patch = f00_report(julia_ok=false)
         @test !wrong_patch.julia.passed
+        @test contains_japanese(wrong_patch.julia.action)
         @test occursin("1.12.6", wrong_patch.julia.action)
 
         missing_git = f00_report(git_ok=false)
         @test !missing_git.git.passed
+        @test contains_japanese(missing_git.git.action)
         @test occursin("Git", missing_git.git.action)
 
         missing_vscode = f00_report(vscode_ok=false)
         @test !missing_vscode.vscode.passed
+        @test contains_japanese(missing_vscode.vscode.action)
         @test occursin("VS Code", missing_vscode.vscode.action)
         @test occursin("code", lowercase(missing_vscode.vscode.action))
 
         missing_extension = f00_report(julia_extension_ok=false)
         @test !missing_extension.vscode.passed
-        @test occursin("Julia extension", missing_extension.vscode.action)
+        @test contains_japanese(missing_extension.vscode.action)
+        @test occursin("Julia", missing_extension.vscode.action)
         @test occursin("julialang.language-julia", lowercase(missing_extension.vscode.action))
     end
 
@@ -92,9 +98,10 @@ end
         @test !run_f00_preflight(root; report=f00_report(), io=output)
         @test read(progress_path, String) == before
         text = String(take!(output))
-        @test occursin("Machine-observed checks", text)
-        @test occursin("Manual confirmations", text)
-        @test occursin("Progress was not updated", text)
+        @test contains_japanese(text)
+        for identifier in ("Julia", "Git", "VS Code", "F00")
+            @test occursin(identifier, text)
+        end
 
         output = IOBuffer()
         @test !run_f00_preflight(
@@ -128,7 +135,10 @@ end
         state = load_progress(progress_path)
         @test state.completed == ["F00"]
         @test state.current == "F01"
-        @test occursin("F00 is complete", String(take!(output)))
+        completed_output = String(take!(output))
+        @test contains_japanese(completed_output)
+        @test occursin("F00", completed_output)
+        @test occursin("F01", completed_output)
     end
 
     @testset "completion is atomic and idempotent without Git side effects" begin
