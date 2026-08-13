@@ -5,14 +5,14 @@ export main, student_greeting
 """
     student_greeting(name::AbstractString) -> String
 
-Return `"Hello, <name>!"` after removing whitespace around `name`.
-Blank names are invalid. Complete the marked return statement for F01.
+`name`の前後の空白を除き、`"Hello, <name>!"`を返す。
+空の名前は無効とする。F01では印を付けたreturn文を完成させる。
 """
 function student_greeting(name::AbstractString)::String
     normalized_name = strip(name)
-    isempty(normalized_name) && throw(ArgumentError("name must not be blank"))
+    isempty(normalized_name) && throw(ArgumentError("名前を空にはできません"))
 
-    # TODO(F01): replace this placeholder with `Hello, <normalized_name>!`.
+    # TODO(F01): この仮実装を`Hello, <normalized_name>!`へ置き換える。
     "TODO: implement student_greeting"
 end
 

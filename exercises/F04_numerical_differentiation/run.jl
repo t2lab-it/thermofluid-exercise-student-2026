@@ -18,47 +18,47 @@ export forward_difference,
 
 function validate_scalar_input(x, h)
     x isa Real && !(x isa Bool) && isfinite(x) ||
-        throw(ArgumentError("x must be a finite real value"))
+        throw(ArgumentError("xは有限な実数にしてください"))
     h isa Real && !(h isa Bool) && isfinite(h) && h > 0 ||
-        throw(ArgumentError("h must be a finite positive real value"))
+        throw(ArgumentError("hは有限な正の実数にしてください"))
     nothing
 end
 
 function validate_point(point)
     point isa Tuple && length(point) == 3 ||
-        throw(ArgumentError("point must be a three-element tuple"))
+        throw(ArgumentError("点は3要素のタプルで指定してください"))
     all(value -> value isa Real && !(value isa Bool) && isfinite(value), point) ||
-        throw(ArgumentError("point coordinates must be finite real values"))
+        throw(ArgumentError("点の座標は有限な実数にしてください"))
     nothing
 end
 
 function forward_difference(f, x, h)
     validate_scalar_input(x, h)
-    # TODO(F04): implement the forward-difference quotient.
+    # TODO(F04): 前進差分商を実装する。
     zero(float(x + h))
 end
 
 function backward_difference(f, x, h)
     validate_scalar_input(x, h)
-    # TODO(F04): implement the backward-difference quotient.
+    # TODO(F04): 後退差分商を実装する。
     zero(float(x + h))
 end
 
 function centered_difference(f, x, h)
     validate_scalar_input(x, h)
-    # TODO(F04): implement the centered-difference quotient.
+    # TODO(F04): 中心差分商を実装する。
     zero(float(x + h))
 end
 
 function convergence_study(f, derivative, x, spacings)
     x isa Real && !(x isa Bool) && isfinite(x) ||
-        throw(ArgumentError("x must be a finite real value"))
+        throw(ArgumentError("xは有限な実数にしてください"))
     spacings isa AbstractVector && length(spacings) >= 2 ||
-        throw(ArgumentError("spacings must contain at least two values"))
+        throw(ArgumentError("spacingsには少なくとも2個の値が必要です"))
     all(h -> h isa Real && !(h isa Bool) && isfinite(h) && h > 0, spacings) ||
-        throw(ArgumentError("spacings must be finite positive real values"))
+        throw(ArgumentError("spacingsは有限な正の実数にしてください"))
     all(index -> spacings[index] > spacings[index + 1], 1:(length(spacings) - 1)) ||
-        throw(ArgumentError("spacings must be strictly decreasing"))
+        throw(ArgumentError("spacingsは狭義単調減少にしてください"))
 
     exact = derivative(x)
     forward_errors = [abs(forward_difference(f, x, h) - exact) for h in spacings]
@@ -85,9 +85,9 @@ end
 function centered_partial(f, point, axis, h; differentiator = centered_difference)
     validate_point(point)
     h isa Real && !(h isa Bool) && isfinite(h) && h > 0 ||
-        throw(ArgumentError("h must be a finite positive real value"))
+        throw(ArgumentError("hは有限な正の実数にしてください"))
     axis isa Integer && !(axis isa Bool) && axis in 1:3 ||
-        throw(ArgumentError("axis must be 1, 2, or 3"))
+        throw(ArgumentError("axisは1、2、3のいずれかにしてください"))
     slice(value) = f(ntuple(index -> index == axis ? value : point[index], 3))
     differentiator(slice, point[axis], h)
 end
@@ -117,7 +117,7 @@ end
 
 function verify_vector_identities(n)
     n isa Integer && !(n isa Bool) && n >= 5 && isodd(n) ||
-        throw(ArgumentError("n must be an odd integer of at least 5"))
+        throw(ArgumentError("nは5以上の奇数にしてください"))
     coordinates = range(-1.0, 1.0; length = Int(n))
     h = step(coordinates)
     curl_gradient = 0.0
