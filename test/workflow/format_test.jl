@@ -4,6 +4,8 @@ const FORMAT_SCRIPT = normpath(joinpath(@__DIR__, "..", "..", "scripts", "format
 include(FORMAT_SCRIPT)
 using .CourseFormatting
 
+contains_japanese_format_text(text::AbstractString) = occursin(r"[ぁ-んァ-ヶ一-龠]", text)
+
 @testset "student Julia formatting boundary" begin
     mktempdir() do root
         write(joinpath(root, ".JuliaFormatter.toml"), """
@@ -34,7 +36,9 @@ using .CourseFormatting
         ))
         diagnostics = IOBuffer()
         @test format_repository(root; check=true, io=diagnostics) == 1
-        @test occursin("scripts/format.jl", String(take!(diagnostics)))
+        diagnostics_text = String(take!(diagnostics))
+        @test contains_japanese_format_text(diagnostics_text)
+        @test occursin("scripts/format.jl", diagnostics_text)
         @test all(read(path, String) == text for (path, text) in before)
 
         @test format_repository(root; check=false, io=IOBuffer()) == 0
@@ -53,12 +57,16 @@ using .CourseFormatting
 
         diagnostics = IOBuffer()
         @test format_repository(root; check=true, io=diagnostics) == 1
-        @test occursin("exercises/F00/invalid.jl", String(take!(diagnostics)))
+        diagnostics_text = String(take!(diagnostics))
+        @test contains_japanese_format_text(diagnostics_text)
+        @test occursin("exercises/F00/invalid.jl", diagnostics_text)
         @test read(invalid, String) == invalid_before
 
         diagnostics = IOBuffer()
         @test format_repository(root; check=false, io=diagnostics) == 1
-        @test occursin("exercises/F00/invalid.jl", String(take!(diagnostics)))
+        diagnostics_text = String(take!(diagnostics))
+        @test contains_japanese_format_text(diagnostics_text)
+        @test occursin("exercises/F00/invalid.jl", diagnostics_text)
         @test read(invalid, String) == invalid_before
         @test read(after_invalid, String) == "after_invalid(x) = x+1\n"
     end
