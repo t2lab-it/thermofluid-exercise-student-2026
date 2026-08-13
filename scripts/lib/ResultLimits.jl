@@ -20,10 +20,10 @@ function check_result_limits(
     task_limit=TASK_LIMIT,
     total_limit=TOTAL_LIMIT,
 )
-    file_limit >= 0 || throw(ArgumentError("file_limit must be nonnegative"))
-    task_limit >= 0 || throw(ArgumentError("task_limit must be nonnegative"))
-    total_limit >= 0 || throw(ArgumentError("total_limit must be nonnegative"))
-    isdir(root) || throw(ArgumentError("results root is not a directory: $root"))
+    file_limit >= 0 || throw(ArgumentError("`file_limit`は0以上にしてください"))
+    task_limit >= 0 || throw(ArgumentError("`task_limit`は0以上にしてください"))
+    total_limit >= 0 || throw(ArgumentError("`total_limit`は0以上にしてください"))
+    isdir(root) || throw(ArgumentError("`results`ルートがディレクトリではありません: $root"))
 
     violations = String[]
     total_size = 0
@@ -36,26 +36,26 @@ function check_result_limits(
                 total_size += size
                 size > file_limit && push!(
                     violations,
-                    "file limit exceeded: $(relpath(path, root)) is $size bytes (limit $file_limit bytes)",
+                    "ファイル上限を超えました: $(relpath(path, root))は$(size)バイトです（上限$(file_limit)バイト）",
                 )
             end
             task_size > task_limit && push!(
                 violations,
-                "task limit exceeded: $(relpath(entry, root)) is $task_size bytes (limit $task_limit bytes)",
+                "課題上限を超えました: $(relpath(entry, root))は$(task_size)バイトです（上限$(task_limit)バイト）",
             )
         elseif isfile(entry)
             size = filesize(entry)
             total_size += size
             size > file_limit && push!(
                 violations,
-                "file limit exceeded: $(relpath(entry, root)) is $size bytes (limit $file_limit bytes)",
+                "ファイル上限を超えました: $(relpath(entry, root))は$(size)バイトです（上限$(file_limit)バイト）",
             )
         end
     end
 
     total_size > total_limit && push!(
         violations,
-        "results limit exceeded: results total is $total_size bytes (limit $total_limit bytes)",
+        "成果物全体の上限を超えました: `results`の合計は$(total_size)バイトです（上限$(total_limit)バイト）",
     )
     violations
 end

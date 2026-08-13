@@ -3,6 +3,8 @@ using Test
 const F00_CLI_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 include(joinpath(F00_CLI_ROOT, "scripts", "course.jl"))
 
+contains_japanese(text::AbstractString) = occursin(r"[ぁ-んァ-ヶ一-龠]", text)
+
 function passing_preflight_report()
     PreflightReport(
         ObservedCheck(:julia, true, "1.12.6", ""),
@@ -89,8 +91,10 @@ end
     @test writes[] == 1
     @test load_progress(joinpath(root, "course_progress.toml")).current == "F01"
     text = String(take!(output))
-    @test occursin("Machine-observed checks", text)
-    @test occursin("Manual confirmations", text)
+    @test contains_japanese(text)
+    for identifier in ("Julia", "Git", "VS Code", "F00", "F01")
+        @test occursin(identifier, text)
+    end
 
     @test_throws ArgumentError main(
         ["preflight", "--confirm-agent", "copilot", "--confirm-agent", "codex"];
@@ -136,8 +140,9 @@ end
         ]); dir=process_root)
         result = f00_command_result(addenv(command, "PATH" => empty_path))
         @test result.exitcode != 0
+        @test contains_japanese(result.stdout)
         @test occursin("NEEDS SETUP", result.stdout)
-        @test occursin("Progress was not updated", result.stdout)
+        @test occursin("F00", result.stdout)
         @test read(progress_path, String) == before
     end
 end

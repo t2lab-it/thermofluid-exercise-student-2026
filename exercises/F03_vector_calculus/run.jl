@@ -15,29 +15,29 @@ vector_field(point) = (
 
 function validate_point(point)
     point isa Tuple && length(point) == 3 ||
-        throw(ArgumentError("point must be a three-element tuple"))
+        throw(ArgumentError("点は3要素のタプルで指定してください"))
     all(value -> value isa Real && isfinite(value), point) ||
-        throw(ArgumentError("point coordinates must be finite real values"))
+        throw(ArgumentError("点の座標は有限な実数にしてください"))
     nothing
 end
 
 function gradient_scalar(point)
     validate_point(point)
-    # TODO(F03): return the three analytic components of grad(phi).
+    # TODO(F03): `grad(phi)`の解析解を3成分で返す。
     value = zero(float(point[1] + point[2] + point[3]))
     (value, value, value)
 end
 
 function curl_vector(point)
     validate_point(point)
-    # TODO(F03): return the three analytic components of curl(A).
+    # TODO(F03): `curl(A)`の解析解を3成分で返す。
     value = zero(float(point[1] + point[2] + point[3]))
     (value, value, value)
 end
 
 function laplacian_scalar(point)
     validate_point(point)
-    # TODO(F03): return the analytic scalar Laplacian of phi.
+    # TODO(F03): `phi`のスカラーラプラシアンの解析解を返す。
     zero(float(point[1] + point[2] + point[3]))
 end
 
@@ -75,5 +75,5 @@ if abspath(PROGRAM_FILE) == @__FILE__
             reference.laplacian - F03VectorCalculus.laplacian_scalar(reference_point),
         ),
     )
-    println("ForwardDiff reference errors = ", reference_errors)
+    println("ForwardDiff参照値との誤差 = ", reference_errors)
 end

@@ -18,7 +18,7 @@ function validate_initial_condition_inputs(x, base, plateau, plateau_start, plat
     return nothing
 end
 
-"""1step更新の引数がN01の実行時の入力条件を満たすか確認する。"""
+"""1ステップ更新の引数がN01の実行時の入力条件を満たすか確認する。"""
 function validate_step_inputs(u_new, u_old, c, dt, dx)
     u_new === u_old && throw(ArgumentError("新旧で別々のバッファを使ってください"))
     length(u_new) == length(u_old) >= 3 ||
@@ -95,19 +95,19 @@ function make_plots(output_dir::AbstractString, upwind, centered)
     centered_path = joinpath(output_dir, "centered-euler.png")
 
     for (result, title, path) in (
-        (upwind, "Upwind + Euler (stable)", upwind_path),
-        (centered, "Centered + Euler (intentionally unstable)", centered_path),
+        (upwind, "風上差分 + Euler（安定）", upwind_path),
+        (centered, "中心差分 + Euler（意図的に不安定）", centered_path),
     )
         plot(
             result.x,
             result.u0;
-            label = "initial",
+            label = "初期値",
             linewidth = 2,
             xlabel = "x",
             ylabel = "u",
             title = title,
         )
-        plot!(result.x, result.u; label = "final", linewidth = 2)
+        plot!(result.x, result.u; label = "最終値", linewidth = 2)
         savefig(path)
     end
     return (upwind = upwind_path, centered = centered_path)
