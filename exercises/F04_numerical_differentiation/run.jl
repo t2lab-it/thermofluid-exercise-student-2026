@@ -92,6 +92,8 @@ function centered_partial(f, point, axis, h; differentiator = centered_differenc
     differentiator(slice, point[axis], h)
 end
 
+# The supplied analytic gradient is differentiated externally with the student's centered difference.
+# The inner gradient is not student work in this residual calculation.
 function curl_gradient_residual(point, h)
     validate_point(point)
     (
@@ -104,11 +106,15 @@ function curl_gradient_residual(point, h)
     )
 end
 
+# The supplied analytic curl is differentiated externally with the student's centered difference.
+# The inner curl is not student work in this residual calculation.
 function divergence_curl_residual(point, h)
     validate_point(point)
     sum(centered_partial(p -> curl_vector(p)[axis], point, axis, h) for axis in 1:3)
 end
 
+# The supplied analytic gradient and Laplacian are used with the student's outer centered difference.
+# The inner gradient and Laplacian are not student work in this residual calculation.
 function laplacian_identity_residual(point, h)
     validate_point(point)
     sum(centered_partial(p -> gradient_scalar(p)[axis], point, axis, h) for axis in 1:3) -

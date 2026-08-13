@@ -8,7 +8,7 @@ if !isdefined(Main, :F04NumericalDifferentiation)
 end
 
 @testset "F04 student-authored example" begin
-    # STUDENT_TEST_REQUIRED(F04): add one independent hand-computable
+    # STUDENT_TEST_REQUIRED(F03-F04): add one independent hand-computable
     # difference case and explain which implementation error it detects.
     @test true # Replace this placeholder with the required independent case.
 end

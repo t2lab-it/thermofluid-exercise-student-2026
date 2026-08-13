@@ -3,8 +3,10 @@ using Test
 const F03_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const F03_RUN = joinpath(F03_ROOT, "exercises", "F03_vector_calculus", "run.jl")
 const F03_OLD_ROOT = joinpath(F03_ROOT, "exercises", "F03_numerical_primer")
+const F03_F04_LOG = joinpath(F03_ROOT, "learning_logs", "templates", "F03-F04.md")
 const F03_AUTOMATIC_REFERENCE = Symbol("automatic" * "_reference")
 const F03_FORWARD_DIFF = "Forward" * "Diff"
+const F03_AUTOMATIC_DIFFERENTIATION = "自動" * "微分"
 
 @testset "F03 vector calculus identities" begin
     @test isfile(F03_RUN)
@@ -47,5 +49,23 @@ const F03_FORWARD_DIFF = "Forward" * "Diff"
         @test !occursin("TODO(F03):", source)
         @test !occursin(F03_FORWARD_DIFF, source)
         @test !occursin("ThermofluidExercise", source)
+    end
+
+    @test isfile(F03_F04_LOG)
+    @test !isfile(joinpath(F03_ROOT, "learning_logs", "templates", "F03.md"))
+    @test !isfile(joinpath(F03_ROOT, "learning_logs", "templates", "F04.md"))
+    if isfile(F03_F04_LOG)
+        log = read(F03_F04_LOG, String)
+        for heading in (
+            "## 実行前予想", "## 証明：curl grad = 0",
+            "## 証明：div curl = 0", "## 証明：div grad = Laplacian",
+            "## 前進・後退・中心差分", "## 一次元の誤差と収束次数",
+            "## ベクトル解析三公式の数値検証", "## 解析的証明と数値的検証の役割",
+            "## 自分のテスト", "## AI利用", "## diff・テスト・結果",
+        )
+            @test occursin(heading, log)
+        end
+        @test !occursin(F03_FORWARD_DIFF, log)
+        @test !occursin(F03_AUTOMATIC_DIFFERENTIATION, log)
     end
 end
