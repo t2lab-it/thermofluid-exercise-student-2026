@@ -244,6 +244,7 @@ end
         end
         @test occursin(joinpath("scripts", "course.jl"), help_result.stdout)
         @test occursin("start N05-N06", help_result.stdout)
+        @test occursin("start F03-F04", help_result.stdout)
         @test occursin("start N08-N09", help_result.stdout)
         @test !occursin("PowerShell", help_result.stdout)
 
