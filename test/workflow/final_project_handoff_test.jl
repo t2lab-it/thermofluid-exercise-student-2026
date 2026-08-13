@@ -6,10 +6,16 @@ const HANDOFF_REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
     path = joinpath(HANDOFF_REPO_ROOT, "FINAL_PROJECT.md")
     @test isfile(path)
     source = isfile(path) ? read(path, String) : ""
-    for phrase in (
-        "別のproject repository", "source commit", "参照元", "変更点",
-        "追加した検証", "private repositoryのURL", "最終成果物は置きません",
+    for identifier in (
+        "thermofluid-project-base-2026", "git rev-parse HEAD", "test/student/",
+        "learning_logs/", "results/", "API", "CI",
     )
-        @test occursin(phrase, source)
+        @test occursin(identifier, source)
+    end
+    for term in (
+        "学生リポジトリ", "プロジェクトリポジトリ", "簡易テスト",
+        "第三者レビュー担当者", "代替案",
+    )
+        @test occursin(term, source)
     end
 end

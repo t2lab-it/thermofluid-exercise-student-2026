@@ -11,6 +11,7 @@ include(joinpath(CLI_REPO_ROOT, "scripts", "lib", "CourseWorkflow.jl"))
 using .CourseWorkflow
 
 contains_japanese(text::AbstractString) = occursin(r"[ぁ-んァ-ヶ一-龠]", text)
+section_marker(id) = "<!-- contract-section: $id -->"
 
 function command_result(command)
     stdout = IOBuffer()
@@ -250,11 +251,13 @@ if get(ENV, "COURSE_SELECTION_PROBE_CHILD", "0") != "1"
     @testset "student README uses public assignment pages" begin
         readme = read(joinpath(CLI_REPO_ROOT, "README.md"), String)
         @test !occursin("TASK.md", readme)
+        @test count(section_marker("assigned_repository"), readme) == 1
+        @test occursin("thermofluid-exercise-student-2026", readme)
         @test occursin("https://t2lab-it.github.io/thermofluid-exercise-2026/", readme)
         @test occursin("run.jl", readme)
-        @test occursin("N05-N06", readme)
-        @test occursin("N08-N09", readme)
-        @test occursin("1 branch、1 PR、1学習ログ", readme)
+        for identifier in ("N05-N06", "N08-N09", "branch", "PR", "learning_logs/")
+            @test occursin(identifier, readme)
+        end
     end
     @testset "Git recorder is cross-platform and rejects automated history or network verbs" begin
         unix_recorder = try

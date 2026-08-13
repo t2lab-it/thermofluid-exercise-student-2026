@@ -1,6 +1,11 @@
 # 熱流体力学演習（2026）学生用リポジトリ
 
-2026年度「熱流体力学演習」の個人用course repositoryを作るためのprivate template repositoryです。教員が履修者ごとに作成・割り当てたprivate repositoryで、Juliaによる数値計算、テスト、Git／GitHub、学習ログ、Coding Agentを組み合わせて、結果を検証しながらコードを開発します。
+2026年度「熱流体力学演習」の個人課題用リポジトリです。Juliaによる数値計算、テスト、Git／GitHub、学習ログ、AIエージェントを組み合わせて、結果を検証しながらコードを開発します。
+
+<!-- contract-section: assigned_repository -->
+## 割り当てられた学生リポジトリ
+
+このリポジトリは、教員が`thermofluid-exercise-student-2026`を基に履修者ごとに作成・割り当てる非公開の学生リポジトリです。
 
 ## はじめに
 
@@ -22,7 +27,7 @@ Windows、macOS、Linuxのローカル環境を対象にします。詳しい導
 
 ## 利用開始
 
-GitHubのrepository招待を受諾した後、割り当てられた自分のprivate course repositoryをHTTPSでcloneし、リポジトリrootで依存関係を準備します。
+GitHubのリポジトリ招待を受諾した後、割り当てられた自分の学生リポジトリをHTTPSで複製し、リポジトリのルートで依存関係を準備します。
 
 ```bash
 git clone <自分の課題リポジトリURL>
@@ -31,15 +36,15 @@ julia --project=. -e 'using Pkg; Pkg.instantiate()'
 julia --project=. scripts/course.jl preflight
 ```
 
-最後の`preflight`は環境を観測して表示するだけで、確認引数を付けない限り進捗を変更しません。表示された`NEEDS SETUP`と`Action`を読み、F00の手順に沿って環境を整えてください。
+最後の`preflight`は環境を観測して表示するだけで、確認引数を付けない限り進捗を変更しません。表示された`NEEDS SETUP`と「対応」を読み、F00の手順に沿って環境を整えてください。
 
 ## 課題の進め方
 
 課題開始方法には次の例外があります。
 
-- `F00`: branch、commit、push、Pull Request、学習ログを作りません。
-- `F01`: 課題branchを手動で作り、最初のPull Requestを経験します。
-- `F02`以降: 前課題をmergeしてcleanな`main`へ戻った後、`course.jl start <ID>`で次の課題を開始します。
+- `F00`: branch、commit、push、pull request、学習ログを作りません。
+- `F01`: 課題branchを手動で作り、最初のpull requestを経験します。
+- `F02`以降: 前課題をmergeして変更のない`main`へ戻った後、`course.jl start <ID>`で次の課題を開始します。
 
 後半の統合課題では内容IDを個別に維持し、進捗と提出は次の提出単位で扱います。
 - `N05`・`N06`は提出単位`N05-N06`として1 branch、1 PR、1学習ログで完了します。
@@ -53,11 +58,11 @@ julia --project=. scripts/course.jl preflight
 2. 課題branchで実装し、自分のテストを追加する。
 3. ローカルテストを実行し、必要な公式出力を再生成する。
 4. 学習ログに予想、変更、diff、テスト、数値結果、判断を記録する。
-5. 変更をcommitしてpushし、`main`へのPull Requestを作る。
-6. Actions、Files changed、完了条件を確認してセルフレビューする。
-7. Pull Requestをmergeし、ローカルの`main`を更新する。
+5. 変更をcommitしてpushし、`main`へのpull requestを作る。
+6. GitHub Actions、`Files changed`、完了条件を確認してセルフレビューする。
+7. pull requestをmergeし、ローカルの`main`を更新する。
 
-Pull Requestを作る前に、次の順で整形、diff確認、テストを実行します。
+pull requestを作る前に、次の順で整形、diff確認、テストを実行します。
 
 ```bash
 julia --project=. scripts/format.jl
@@ -92,7 +97,7 @@ julia --project=. scripts/format.jl --check
 julia --project=. -e 'using Pkg; Pkg.test()'
 ```
 
-`start`はcleanな`main`、課題の順序、現在までのローカルテスト、生成物サイズを確認してから課題branchを作ります。pull、push、Pull Request、mergeは自動化しません。
+`start`は変更のない`main`、課題の順序、現在までのローカルテスト、生成物サイズを確認してから課題branchを作ります。`pull`、push、pull request、mergeは自動化しません。
 
 ## リポジトリ構成
 
@@ -106,14 +111,14 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 | `scratch/` | 一時的な試行。正式な成果物は置かない |
 | `scripts/` | 課題進行と生成物検査の補助コマンド |
 | `src/` | 後半課題で共通化するJuliaコード |
-| [`FINAL_PROJECT.md`](FINAL_PROJECT.md) | N09までの必要なcodeを別のproject repositoryへ移す手順 |
+| [`FINAL_PROJECT.md`](FINAL_PROJECT.md) | N09までの必要なコードを別のプロジェクトリポジトリへ移す手順 |
 
 ## 現在の収録範囲
 
 | 課題ID | 内容 |
 |---|---|
 | `F00` | 環境診断 |
-| `F01` | 最初のPull Request |
+| `F01` | 最初のpull request |
 | `F02` | Juliaの配列・関数・テスト |
 | `F03` | ベクトル解析の公式、解析微分、自動微分 |
 | `F04` | 数値微分と格子収束 |
@@ -130,4 +135,4 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 - `test/provided/`の提供テストを削除したり、判定を弱めたりしないでください。
 - 公式`run.jl`が`results/<課題ID>/`へ生成した成果物は、サイズ制限を確認してcommitします。
 - `scratch/`は一時作業用です。提出対象の実装や結果の正本にしません。
-- Coding Agentの提案は、diff、テスト、数値結果を自分で確認し、採用・修正・却下の理由を学習ログへ記録してください。
+- AIエージェントの提案は、diff、テスト、数値結果を自分で確認し、採用・修正・却下の理由を学習ログへ記録してください。
