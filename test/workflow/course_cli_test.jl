@@ -10,6 +10,8 @@ const CLI_EXPECTED_UNITS = [
 include(joinpath(CLI_REPO_ROOT, "scripts", "lib", "CourseWorkflow.jl"))
 using .CourseWorkflow
 
+contains_japanese(text::AbstractString) = occursin(r"[ぁ-んァ-ヶ一-龠]", text)
+
 function command_result(command)
     stdout = IOBuffer()
     stderr = IOBuffer()
@@ -146,7 +148,8 @@ end
         before = progress_snapshot(repo)
         result = run_course(repo, ["start", "F02"])
         @test result.exitcode != 0
-        @test occursin("working tree", lowercase(result.stderr))
+        @test contains_japanese(result.stderr)
+        @test occursin("git status --short", result.stderr)
         @test progress_snapshot(repo) == before
         @test readchomp(`git -C $repo branch --show-current`) == "main"
     end
@@ -157,7 +160,9 @@ end
         before = progress_snapshot(repo)
         result = run_course(repo, ["start", "F02"])
         @test result.exitcode != 0
+        @test contains_japanese(result.stderr)
         @test occursin("main", result.stderr)
+        @test occursin("exercise/F01-foundations", result.stderr)
         @test progress_snapshot(repo) == before
     end
 
@@ -166,7 +171,8 @@ end
         before = progress_snapshot(repo)
         result = run_course(repo, ["start", "F02"])
         @test result.exitcode != 0
-        @test occursin("local tests failed", lowercase(result.stderr))
+        @test contains_japanese(result.stderr)
+        @test occursin("test/runtests.jl", result.stderr)
         @test progress_snapshot(repo) == before
         @test readchomp(`git -C $repo branch --show-current`) == "main"
     end
@@ -179,7 +185,10 @@ end
         state = load_progress(joinpath(repo, "course_progress.toml"))
         @test state.current == "F02"
         @test state.completed == ["F00", "F01"]
-        @test occursin("git push", result.stdout)
+        @test contains_japanese(result.stdout)
+        @test occursin("F02", result.stdout)
+        @test occursin("exercise/F02-julia-arrays-and-tests", result.stdout)
+        @test occursin("git push -u origin exercise/F02-julia-arrays-and-tests", result.stdout)
         @test occursin("pull request", lowercase(result.stdout))
         @test !occursin(r"git (pull|push|fetch)", result.executed_commands)
     end
@@ -213,6 +222,7 @@ end
         repo = make_course_repo(current="F00")
         help_result = run_course(repo, ["--help"])
         @test help_result.exitcode == 0
+        @test contains_japanese(help_result.stdout)
         for command in ("preflight", "start <ID>", "status", "check-results")
             @test occursin(command, help_result.stdout)
         end
@@ -222,11 +232,14 @@ end
         @test !occursin("PowerShell", help_result.stdout)
 
         @test run_course(repo, ["preflight"]).exitcode == 0
-        @test occursin("F00", run_course(repo, ["status"]).stdout)
+        status_result = run_course(repo, ["status"])
+        @test contains_japanese(status_result.stdout)
+        @test occursin("F00", status_result.stdout)
         @test run_course(repo, ["check-results"]).exitcode == 0
 
         bad = run_course(repo, ["start"])
         @test bad.exitcode != 0
+        @test contains_japanese(bad.stderr)
         @test occursin("start <ID>", bad.stderr)
         @test occursin(joinpath("scripts", "course.jl"), bad.stderr)
         @test !occursin("PowerShell", bad.stderr)
