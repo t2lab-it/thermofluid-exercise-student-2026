@@ -8,8 +8,7 @@ using .ResultLimits
 
 const SLUGS = Dict(
     "F02" => "julia-arrays-and-tests",
-    "F03" => "vector-calculus",
-    "F04" => "numerical-differentiation",
+    "F03-F04" => "vector-calculus-numerical-differentiation",
     "N01" => "linear-advection",
     "N02" => "nonlinear-advection",
     "N03" => "diffusion",
@@ -28,6 +27,7 @@ const USAGE = """
 
 例:
   julia --project=. $(joinpath("scripts", "course.jl")) start N05-N06
+  julia --project=. $(joinpath("scripts", "course.jl")) start F03-F04
   julia --project=. $(joinpath("scripts", "course.jl")) start N08-N09
 """
 

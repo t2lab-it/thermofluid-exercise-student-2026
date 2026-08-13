@@ -6,10 +6,11 @@ export ORDERED_UNITS, TASK_IDS_BY_UNIT, ProgressState, load_progress, save_progr
        tests_to_run, validate_transition
 
 const ORDERED_UNITS = [
-    "F00", "F01", "F02", "F03", "F04",
+    "F00", "F01", "F02", "F03-F04",
     "N01", "N02", "N03", "N04", "N05-N06", "N07", "N08-N09",
 ]
 const TASK_IDS_BY_UNIT = Dict(unit => [unit] for unit in ORDERED_UNITS)
+TASK_IDS_BY_UNIT["F03-F04"] = ["F03", "F04"]
 TASK_IDS_BY_UNIT["N05-N06"] = ["N05", "N06"]
 TASK_IDS_BY_UNIT["N08-N09"] = ["N08", "N09"]
 

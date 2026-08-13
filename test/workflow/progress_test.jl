@@ -5,13 +5,14 @@ include(joinpath(REPO_ROOT, "scripts", "lib", "CourseWorkflow.jl"))
 using .CourseWorkflow
 
 const EXPECTED_UNITS = [
-    "F00", "F01", "F02", "F03", "F04",
+    "F00", "F01", "F02", "F03-F04",
     "N01", "N02", "N03", "N04", "N05-N06", "N07", "N08-N09",
 ]
 
 @testset "course progress" begin
     @test ORDERED_UNITS == EXPECTED_UNITS
     @test TASK_IDS_BY_UNIT["N05-N06"] == ["N05", "N06"]
+    @test TASK_IDS_BY_UNIT["F03-F04"] == ["F03", "F04"]
     @test TASK_IDS_BY_UNIT["N08-N09"] == ["N08", "N09"]
 
     state = load_progress(joinpath(REPO_ROOT, "course_progress.toml"))
@@ -22,17 +23,18 @@ const EXPECTED_UNITS = [
 
     advanced = ProgressState(2, ORDERED_UNITS, ["F00", "F01"], "F02")
     @test tests_to_run(advanced) == ["F00", "F01", "F02"]
-    @test validate_transition(advanced, "F03") === nothing
+    @test validate_transition(advanced, "F03-F04") === nothing
     @test_throws ArgumentError validate_transition(advanced, "N01")
 
-    f03_complete = ProgressState(2, EXPECTED_UNITS, ["F00", "F01", "F02"], "F03")
-    @test validate_transition(f03_complete, "F04") === nothing
-    @test_throws ArgumentError validate_transition(f03_complete, "N01")
+    f03_f04 = ProgressState(2, EXPECTED_UNITS, ["F00", "F01", "F02"], "F03-F04")
+    @test tests_to_run(f03_f04)[end-1:end] == ["F03", "F04"]
+    @test validate_transition(f03_f04, "N01") === nothing
+    @test_throws ArgumentError validate_transition(f03_f04, "F04")
 
     n05_n06 = ProgressState(
         2,
         EXPECTED_UNITS,
-        EXPECTED_UNITS[1:9],
+        EXPECTED_UNITS[1:8],
         "N05-N06",
     )
     @test tests_to_run(n05_n06)[end-1:end] == ["N05", "N06"]

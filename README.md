@@ -49,9 +49,10 @@ julia --project=. scripts/course.jl preflight
 
 後半の統合課題では内容IDを個別に維持し、進捗と提出は次の提出単位で扱います。
 - `N05`・`N06`は提出単位`N05-N06`として1 branch、1 PR、1学習ログで完了します。
+- `F03`・`F04`は提出単位`F03-F04`として1 branch、1 PR、1学習ログで完了します。
 - `N08`・`N09`は提出単位`N08-N09`として1 branch、1 PR、1学習ログで完了します。
 
-開始時は個別の内容IDではなく、`course.jl start N05-N06`または`course.jl start N08-N09`を使います。
+開始時は個別の内容IDではなく、`course.jl start F03-F04`、`course.jl start N05-N06`、または`course.jl start N08-N09`を使います。
 
 通常課題は次の順で進めます。
 
@@ -121,8 +122,8 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 | `F00` | 環境診断 |
 | `F01` | 最初のpull request |
 | `F02` | Juliaの配列・関数・テスト |
-| `F03` | ベクトル解析の公式、解析微分、自動微分 |
-| `F04` | 数値微分と格子収束 |
+| `F03` | ベクトル解析の公式、解析微分（提出単位`F03-F04`） |
+| `F04` | 数値微分と格子収束（提出単位`F03-F04`） |
 | `N01` | 1次元線形移流方程式 |
 | `N07` | 二次元拡散・移流拡散 |
 | `N08` | PDE分類・Laplace方程式 |

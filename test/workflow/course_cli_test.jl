@@ -3,7 +3,7 @@ using Test
 const CLI_REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const COURSE_SCRIPT = joinpath(CLI_REPO_ROOT, "scripts", "course.jl")
 const CLI_EXPECTED_UNITS = [
-    "F00", "F01", "F02", "F03", "F04",
+    "F00", "F01", "F02", "F03-F04",
     "N01", "N02", "N03", "N04", "N05-N06", "N07", "N08-N09",
 ]
 
@@ -194,6 +194,32 @@ end
         @test !occursin(r"git (pull|push|fetch)", result.executed_commands)
     end
 
+    @testset "start advances F02 to the combined F03-F04 unit" begin
+        repo = make_course_repo(current="F02")
+        result = run_course(repo, ["start", "F03-F04"])
+        @test result.exitcode == 0
+        @test readchomp(`git -C $repo branch --show-current`) ==
+              "exercise/F03-F04-vector-calculus-numerical-differentiation"
+        state = load_progress(joinpath(repo, "course_progress.toml"))
+        @test state.current == "F03-F04"
+        @test state.completed == ["F00", "F01", "F02"]
+        @test tests_to_run(state)[end-1:end] == ["F03", "F04"]
+    end
+
+    @testset "start rejects separate F03 and F04 content IDs atomically" begin
+        for id in ("F03", "F04")
+            repo = make_course_repo(current="F02")
+            before = progress_snapshot(repo)
+            branches_before = read(Cmd(["git", "-C", repo, "branch", "--format=%(refname:short)"]), String)
+            result = run_course(repo, ["start", id])
+            @test result.exitcode != 0
+            @test occursin("F03-F04", result.stderr)
+            @test progress_snapshot(repo) == before
+            @test readchomp(`git -C $repo branch --show-current`) == "main"
+            branches_after = read(Cmd(["git", "-C", repo, "branch", "--format=%(refname:short)"]), String)
+            @test branches_after == branches_before
+        end
+    end
     @testset "start advances N04 to the combined N05-N06 unit" begin
         repo = make_course_repo(current="N04")
         result = run_course(repo, ["start", "N05-N06"])
@@ -202,7 +228,7 @@ end
               "exercise/N05-N06-common-package-2d-advection"
         state = load_progress(joinpath(repo, "course_progress.toml"))
         @test state.current == "N05-N06"
-        @test state.completed == CLI_EXPECTED_UNITS[1:9]
+        @test state.completed == CLI_EXPECTED_UNITS[1:8]
         @test tests_to_run(state)[end-1:end] == ["N05", "N06"]
     end
 
@@ -229,6 +255,7 @@ end
         end
         @test occursin(joinpath("scripts", "course.jl"), help_result.stdout)
         @test occursin("start N05-N06", help_result.stdout)
+        @test occursin("start F03-F04", help_result.stdout)
         @test occursin("start N08-N09", help_result.stdout)
         @test !occursin("PowerShell", help_result.stdout)
 

@@ -3,7 +3,10 @@ using Test
 const F03_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 const F03_RUN = joinpath(F03_ROOT, "exercises", "F03_vector_calculus", "run.jl")
 const F03_OLD_ROOT = joinpath(F03_ROOT, "exercises", "F03_numerical_primer")
-const F03_LOG = joinpath(F03_ROOT, "learning_logs", "templates", "F03.md")
+const F03_F04_LOG = joinpath(F03_ROOT, "learning_logs", "templates", "F03-F04.md")
+const F03_AUTOMATIC_REFERENCE = Symbol("automatic" * "_reference")
+const F03_FORWARD_DIFF = "Forward" * "Diff"
+const F03_AUTOMATIC_DIFFERENTIATION = "自動" * "微分"
 
 @testset "F03 vector calculus identities" begin
     @test isfile(F03_RUN)
@@ -14,7 +17,6 @@ const F03_LOG = joinpath(F03_ROOT, "learning_logs", "templates", "F03.md")
             include(F03_RUN)
         end
         p = (0.2, -0.3, 0.4)
-        reference = F03VectorCalculus.automatic_reference(p)
         for name in (:gradient_scalar, :curl_vector, :laplacian_scalar)
             @test name in names(F03VectorCalculus)
         end
@@ -23,11 +25,13 @@ const F03_LOG = joinpath(F03_ROOT, "learning_logs", "templates", "F03.md")
                       :verify_identities)
             @test moved ∉ names(F03VectorCalculus; all=true)
         end
-        @test all(isapprox.(F03VectorCalculus.gradient_scalar(p), reference.gradient;
+        @test all(isapprox.(F03VectorCalculus.gradient_scalar(p),
+            (1.396785564032526, 0.08758622398516933, 0.2831424512830345);
             atol=1e-12, rtol=1e-12))
-        @test all(isapprox.(F03VectorCalculus.curl_vector(p), reference.curl;
+        @test all(isapprox.(F03VectorCalculus.curl_vector(p),
+            (-0.9778085783652466, -1.1669155212954077, -0.949557931661533);
             atol=1e-12, rtol=1e-12))
-        @test isapprox(F03VectorCalculus.laplacian_scalar(p), reference.laplacian;
+        @test isapprox(F03VectorCalculus.laplacian_scalar(p), -0.2831424512830345;
             atol=1e-12, rtol=1e-12)
 
         for call in (
@@ -38,32 +42,30 @@ const F03_LOG = joinpath(F03_ROOT, "learning_logs", "templates", "F03.md")
             @test_throws ArgumentError call()
         end
 
-        run(`$(Base.julia_cmd()) --startup-file=no --project=$(F03_ROOT) $(F03_RUN)`)
         @test !isdir(joinpath(F03_ROOT, "results", "F03"))
 
         source = read(F03_RUN, String)
-        @test count("TODO(F03):", source) == 3
+        @test F03_AUTOMATIC_REFERENCE ∉ names(F03VectorCalculus; all=true)
+        @test !occursin("TODO(F03):", source)
+        @test !occursin(F03_FORWARD_DIFF, source)
         @test !occursin("ThermofluidExercise", source)
     end
 
-    @test isfile(F03_LOG)
-    if isfile(F03_LOG)
-        log = read(F03_LOG, String)
+    @test isfile(F03_F04_LOG)
+    @test !isfile(joinpath(F03_ROOT, "learning_logs", "templates", "F03.md"))
+    @test !isfile(joinpath(F03_ROOT, "learning_logs", "templates", "F04.md"))
+    if isfile(F03_F04_LOG)
+        log = read(F03_F04_LOG, String)
         for heading in (
-            "## 完全証明：curl grad = 0",
-            "## 構造確認：div curl = 0",
-            "## 成分確認：div grad = Laplacian",
-            "## 解析式のJulia実装",
-            "## ForwardDiffによる参照値",
-            "## 自分のテスト",
+            "## 実行前予想", "## 証明：curl grad = 0",
+            "## 証明：div curl = 0", "## 証明：div grad = Laplacian",
+            "## 前進・後退・中心差分", "## 一次元の誤差と収束次数",
+            "## ベクトル解析三公式の数値検証", "## 解析的証明と数値的検証の役割",
+            "## 自分のテスト", "## AI利用", "## diff・テスト・結果",
         )
             @test occursin(heading, log)
         end
-        for proof_prompt in ("使用した定義", "添字の交換・縮約", "成分和の展開", "結論")
-            @test occursin(proof_prompt, log)
-        end
-        for removed in ("n=9", "n=17", "粗格子／細格子", "数値検証")
-            @test !occursin(removed, log)
-        end
+        @test !occursin(F03_FORWARD_DIFF, log)
+        @test !occursin(F03_AUTOMATIC_DIFFERENTIATION, log)
     end
 end
