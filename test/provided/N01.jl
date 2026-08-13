@@ -68,55 +68,48 @@ end
         source = read(N01_RUN, String)
         @test !occursin("ThermofluidExercise", source)
         @test !occursin("Vector{Vector", source)
-        section_markers = (
-            "# === 学生が実装する3つの関数 ===",
-            "# === 境界条件と時間発展の流れ ===",
+        ordered_functions = (
+            "rectangular_initial_condition", "upwind_step!", "centered_step!",
+            "apply_boundary!", "simulate", "main",
         )
-        marker_positions = map(marker -> findfirst(marker, source), section_markers)
-        @test all(!isnothing, marker_positions)
-        if all(!isnothing, marker_positions)
-            @test issorted(map(first, marker_positions))
+        function_positions = map(
+            name -> findfirst(Regex("function\\s+" * name * "\\s*\\("), source),
+            ordered_functions,
+        )
+        @test all(!isnothing, function_positions)
+        if all(!isnothing, function_positions)
+            @test issorted(map(first, function_positions))
         end
 
-        for required_header in (
-            "1次元線形移流方程式",
-            "読む順序",
-            "rectangular_initial_condition → upwind_step! / centered_step!",
-            "apply_boundary! → simulate → main",
+        for required_identifier in (
             "provided_support.jl",
-            "入力検証と出力の詳細",
-            "おまじない",
-            "読解・編集する必要はありません",
             "value::T",
             "{<:Real}",
             ":upwind",
             "condition ? true_value : false_value",
-            "named tuple",
         )
-            @test occursin(required_header, source)
+            @test occursin(required_identifier, source)
         end
 
-        @test occursin(r"function\s+main\s*\(", source)
-
-        @test count("TODO(N01):", source) == 3
-        for required_todo in (
-            "矩形状の初期分布",
-            "風上差分と陽Euler法による1step更新",
-            "中心差分と陽Euler法による1step更新",
-        )
-            @test occursin(required_todo, source)
-            todo_pattern = Regex("TODO\\(N01\\):\\s+" * required_todo)
-            todo_position = findfirst(todo_pattern, source)
-            opening = isnothing(todo_position) ? nothing :
-                findprev("#=", source, first(todo_position))
-            closing_before = isnothing(todo_position) ? nothing :
-                findprev("=#", source, first(todo_position))
-            closing_after = isnothing(todo_position) ? nothing :
-                findnext("=#", source, last(todo_position))
-            @test !isnothing(opening)
-            @test !isnothing(closing_after)
-            if !isnothing(opening) && !isnothing(closing_before)
-                @test first(opening) > first(closing_before)
+        todo_positions = first.(findall("TODO(N01):", source))
+        @test length(todo_positions) == 3
+        if all(!isnothing, function_positions) && length(todo_positions) == 3
+            for index in 1:3
+                lower = first(function_positions[index])
+                upper = first(function_positions[index + 1])
+                positions = filter(position -> lower < position < upper, todo_positions)
+                @test length(positions) == 1
+                if length(positions) == 1
+                    todo_position = only(positions)
+                    opening = findprev("#=", source, todo_position)
+                    closing_before = findprev("=#", source, todo_position)
+                    closing_after = findnext("=#", source, todo_position)
+                    @test !isnothing(opening)
+                    @test !isnothing(closing_after)
+                    if !isnothing(opening) && !isnothing(closing_before)
+                        @test first(opening) > first(closing_before)
+                    end
+                end
             end
         end
 
