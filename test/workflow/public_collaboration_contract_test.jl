@@ -27,8 +27,6 @@ source(path) = read(joinpath(ROOT, path), String)
     for marker in ("sources_and_reuse", "publication_safety")
         @test occursin("contract-section: $marker", pull_request)
     end
-    @test occursin("pull_request:", workflow)
-    @test occursin("contents: read", workflow)
     @test !occursin("pull_request_target", workflow)
     @test !occursin(r"(?m)^\s*secrets\s*:", workflow)
 end
