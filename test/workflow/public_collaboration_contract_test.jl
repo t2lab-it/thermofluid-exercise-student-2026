@@ -17,6 +17,13 @@ source(path) = read(joinpath(ROOT, path), String)
     for term in ("fork", "出典", "CC BY 4.0", "MIT", "非公開の連絡")
         @test occursin(term, contribution)
     end
+    for content in (contribution, pull_request)
+        @test occursin("合理的配慮", content)
+        @test occursin("AI利用の全文ログ", content)
+        @test occursin("生の会話記録", content)
+        @test occursin("リポジトリに含めません", content)
+        @test occursin("AI利用の要約", content)
+    end
     for marker in ("sources_and_reuse", "publication_safety")
         @test occursin("contract-section: $marker", pull_request)
     end
