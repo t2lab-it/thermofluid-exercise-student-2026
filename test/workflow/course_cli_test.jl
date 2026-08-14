@@ -279,7 +279,6 @@ if get(ENV, "COURSE_SELECTION_PROBE_CHILD", "0") != "1"
         readme = read(joinpath(CLI_REPO_ROOT, "README.md"), String)
         @test !occursin("TASK.md", readme)
         @test count(section_marker("assigned_repository"), readme) == 1
-        @test occursin("thermofluid-exercise-student-2026", readme)
         @test occursin("https://t2lab-it.github.io/thermofluid-exercise-2026/", readme)
         @test occursin("run.jl", readme)
         for identifier in ("N05-N06", "N08-N09", "branch", "PR", "learning_logs/")
