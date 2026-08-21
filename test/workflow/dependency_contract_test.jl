@@ -7,18 +7,15 @@ const FORWARD_DIFF = "Forward" * "Diff"
 @testset "student root dependency contract" begin
     project = TOML.parsefile(joinpath(DEPENDENCY_ROOT, "Project.toml"))
     @test Set(keys(project["deps"])) == Set([
-        "JuliaFormatter",
         "LinearAlgebra",
         "Plots",
         "TOML",
     ])
     @test !haskey(project["compat"], FORWARD_DIFF)
-    @test project["compat"]["JuliaFormatter"] == "=2.10.1"
     @test project["compat"]["julia"] == "1.12.6"
 
     manifest = read(joinpath(DEPENDENCY_ROOT, "Manifest.toml"), String)
     @test occursin("julia_version = \"1.12.6\"", manifest)
     @test !occursin("[[deps.$FORWARD_DIFF]]", manifest)
-    @test occursin("[[deps.JuliaFormatter]]", manifest)
     @test !occursin("[[deps.CairoMakie]]", manifest)
 end

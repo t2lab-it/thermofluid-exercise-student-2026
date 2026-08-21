@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "3ac0c916b8e7114f8ba7bd11241dccd3ce9e5061"
+project_hash = "90c63800150dbcfd271b1dbeb07c52846158b29c"
 
 [[deps.AliasTables]]
 deps = ["PtrArrays", "Random"]
@@ -78,20 +78,6 @@ deps = ["ColorTypes", "FixedPointNumbers", "Reexport"]
 git-tree-sha1 = "37ea44092930b1811e666c3bc38065d7d87fcc74"
 uuid = "5ae59095-9a9b-59fe-a467-6f913c188581"
 version = "0.13.1"
-
-[[deps.CommonMark]]
-deps = ["PrecompileTools"]
-git-tree-sha1 = "7e0e715804be2cfdc251d9a4bd10ace7a1b791e5"
-uuid = "a80b9123-70ca-4bc0-993e-6e3bcb318db6"
-version = "1.0.3"
-
-    [deps.CommonMark.extensions]
-    CommonMarkMarkdownASTExt = "MarkdownAST"
-    CommonMarkMarkdownExt = "Markdown"
-
-    [deps.CommonMark.weakdeps]
-    Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
-    MarkdownAST = "d0879d2d-cac2-40c8-9cee-1863dc0c7391"
 
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
@@ -252,11 +238,6 @@ git-tree-sha1 = "24f6def62397474a297bfcec22384101609142ed"
 uuid = "7746bdde-850d-59dc-9ae8-88ece973131d"
 version = "2.86.3+0"
 
-[[deps.Glob]]
-git-tree-sha1 = "246c628cec062230b7d183aab88841fa94fcabe9"
-uuid = "c27321d9-0574-5035-807b-f59d2c89b15c"
-version = "1.5.0"
-
 [[deps.Graphite2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "69ffb934a5c5b7e086a0b4fee3427db2556fba6e"
@@ -319,17 +300,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "1dae3057da6f2b9c857afef03177bbdc7c4afe92"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "3.2.0+0"
-
-[[deps.JuliaFormatter]]
-deps = ["CommonMark", "Glob", "JuliaSyntax", "PrecompileTools", "TOML", "Test"]
-git-tree-sha1 = "878a99e9b2f2ac45efe9b384727134a9f1744071"
-uuid = "98e50ef6-434e-11e9-1051-2b60c6c9e899"
-version = "2.10.1"
-
-[[deps.JuliaSyntax]]
-git-tree-sha1 = "0d4b3dab95018bcf3925204475693d9f09dc45b8"
-uuid = "70703baa-626e-46a2-a12c-08ffd08c73b4"
-version = "1.0.2"
 
 [[deps.JuliaSyntaxHighlighting]]
 deps = ["StyledStrings"]
@@ -832,7 +802,7 @@ uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 version = "1.11.0"
 
 [[deps.ThermofluidExercise]]
-deps = ["JuliaFormatter", "LinearAlgebra", "Plots", "TOML"]
+deps = ["LinearAlgebra", "Plots", "TOML"]
 path = "."
 uuid = "6cf049f0-8f3e-4f50-9f52-a7aa1a85f701"
 version = "0.1.0"
