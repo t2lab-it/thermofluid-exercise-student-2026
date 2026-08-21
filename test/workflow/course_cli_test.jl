@@ -281,7 +281,7 @@ if get(ENV, "COURSE_SELECTION_PROBE_CHILD", "0") != "1"
         @test count(section_marker("assigned_repository"), readme) == 1
         @test occursin("https://t2lab-it.github.io/thermofluid-exercise-2026/", readme)
         @test occursin("run.jl", readme)
-        for identifier in ("N05-N06", "N08-N09", "branch", "PR", "learning_logs/")
+        for identifier in ("N05-N06", "N08`・`N09", "branch", "PR", "learning_logs/")
             @test occursin(identifier, readme)
         end
     end
