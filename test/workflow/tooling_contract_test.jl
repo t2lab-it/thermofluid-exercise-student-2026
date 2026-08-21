@@ -6,6 +6,7 @@ const TOOLING_REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
     extensions_path = joinpath(TOOLING_REPO_ROOT, ".vscode", "extensions.json")
     settings_path = joinpath(TOOLING_REPO_ROOT, ".vscode", "settings.json")
     ci_path = joinpath(TOOLING_REPO_ROOT, ".github", "workflows", "ci.yml")
+    readme_path = joinpath(TOOLING_REPO_ROOT, "README.md")
 
     @test isfile(extensions_path)
     @test isfile(settings_path)
