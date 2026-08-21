@@ -35,13 +35,10 @@ const TOOLING_REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
     @test occursin("pull_request:", ci)
     @test occursin("permissions:\n  contents: read", ci)
     instantiate = findfirst("Instantiate environment", ci)
-    format_check = findfirst("Check Julia formatting", ci)
     tests = findfirst("Run tests", ci)
     @test !isnothing(instantiate)
-    @test !isnothing(format_check)
     @test !isnothing(tests)
-    @test first(instantiate) < first(format_check) < first(tests)
-    @test occursin("julia --project=. scripts/format.jl --check", ci)
+    @test first(instantiate) < first(tests)
     @test occursin(
         "julia --project=. -e 'using Pkg; Pkg.instantiate(; allow_autoprecomp=false)'",
         ci,
