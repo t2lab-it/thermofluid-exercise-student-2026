@@ -44,4 +44,25 @@ const TOOLING_REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
     )
     @test occursin("julia --startup-file=no --project=. test/runtests.jl", ci)
     @test !occursin("Pkg.test()", ci)
+
+    readme = read(readme_path, String)
+    for marker in (
+        "- Julia 1.12.6\n- Git\n- VS Code\n",
+        "https://t2lab-it.github.io/thermofluid-exercise-2026/setup/git-github.html",
+        "https://t2lab-it.github.io/thermofluid-exercise-2026/guides/workflow.html",
+        "julia --project=. scripts/course.jl preflight\n",
+        "julia --project=. scripts/course.jl check-results\n",
+        "julia --project=. -e 'using Pkg; Pkg.test()'",
+    )
+        @test occursin(marker, readme)
+    end
+    for marker in (
+        "Julia拡張`julialang.language-julia`（必須）",
+        "Japanese Language Pack（任意）",
+        "julia --project=. scripts/format.jl",
+        "git diff",
+        "CIは整形状態を検査しますが、ファイルの編集やpushは行いません。",
+    )
+        @test !occursin(marker, readme)
+    end
 end

@@ -17,7 +17,7 @@ const PR_ADOPTION_HEADING = r"(?m)^## AI提案の採否[ \t]*$"
         @test length(sections) == 1 && all(field -> occursin(field, only(sections).captures[1]), FIELDS)
         @test all(rule -> !occursin(rule, source), LEGACY)
     end
-    @test occursin(GUIDE, read(joinpath(ROOT, "README.md"), String))
+    @test !occursin(GUIDE, read(joinpath(ROOT, "README.md"), String))
     template = read(joinpath(ROOT, ".github", "pull_request_template.md"), String)
     @test occursin(GUIDE, template)
     @test occursin("学習ログ", template)
