@@ -64,6 +64,18 @@ function make_course_repo(; current="F01", failing_current=false)
         )
     end
 
+    for unit in ORDERED_UNITS
+        for id in TASK_IDS_BY_UNIT[unit]
+            starter = joinpath(repo, "exercises", "$(id)_fixture", "run.jl")
+            mkpath(dirname(starter))
+            write(starter, "# student starter\n")
+            write_task_test(joinpath(repo, "test", "provided", "$id.jl"))
+        end
+        log = joinpath(repo, "learning_logs", "templates", "$unit.md")
+        mkpath(dirname(log))
+        write(log, "# 学習ログ\n")
+    end
+
     git!(repo, "init", "-b", "main")
     git!(repo, "config", "user.name", "Course CLI Test")
     git!(repo, "config", "user.email", "course-cli@example.invalid")
@@ -135,6 +147,40 @@ function progress_snapshot(repo)
 end
 
 @testset "local-only course CLI" begin
+    @testset "start rejects missing next-unit assets before any state change" begin
+        for missing in (
+            "exercises/N02_fixture/run.jl",
+            "test/provided/N02.jl",
+            "learning_logs/templates/N02.md",
+        )
+            repo = make_course_repo(current="N01")
+            rm(joinpath(repo, missing))
+            git!(repo, "add", "-A")
+            git!(repo, "commit", "-m", "unit is not distributed yet")
+            before = progress_snapshot(repo)
+            branches_before = git!(repo, "branch", "--format=%(refname:short)")
+            result = run_course(repo, ["start", "N02"])
+            @test result.exitcode != 0
+            @test occursin("N02", result.stderr)
+            @test progress_snapshot(repo) == before
+            @test git!(repo, "branch", "--show-current") == "main\n"
+            @test git!(repo, "branch", "--format=%(refname:short)") == branches_before
+            @test !occursin("switch -c", result.executed_commands)
+        end
+    end
+
+    @testset "combined unit requires both content starters" begin
+        repo = make_course_repo(current="F02")
+        rm(joinpath(repo, "exercises", "F04_fixture", "run.jl"))
+        git!(repo, "add", "-A")
+        git!(repo, "commit", "-m", "second starter is missing")
+        before = progress_snapshot(repo)
+        result = run_course(repo, ["start", "F03-F04"])
+        @test result.exitcode != 0
+        @test progress_snapshot(repo) == before
+        @test !occursin("switch -c", result.executed_commands)
+    end
+
     @testset "course runner selects only current and completed IDs" begin
         command = `$(Base.julia_cmd()) --startup-file=no --project=$CLI_REPO_ROOT $(joinpath(CLI_REPO_ROOT, "test", "runtests.jl")) --course-only`
         result = command_result(addenv(command, "COURSE_TASK_TEST_ROOT" => joinpath(CLI_REPO_ROOT, "test", "fixtures", "git")))
@@ -254,9 +300,9 @@ end
             @test occursin(command, help_result.stdout)
         end
         @test occursin(joinpath("scripts", "course.jl"), help_result.stdout)
-        @test occursin("start N05-N06", help_result.stdout)
+        @test occursin("start F02", help_result.stdout)
         @test occursin("start F03-F04", help_result.stdout)
-        @test occursin("start N08-N09", help_result.stdout)
+        @test !occursin("start N08-N09", help_result.stdout)
         @test !occursin("PowerShell", help_result.stdout)
 
         @test run_course(repo, ["preflight"]).exitcode == 0
@@ -273,7 +319,6 @@ end
         @test !occursin("PowerShell", bad.stderr)
     end
 end
-if get(ENV, "COURSE_SELECTION_PROBE_CHILD", "0") != "1"
 @testset "Task 3 review regressions" begin
     @testset "student README uses public assignment pages" begin
         readme = read(joinpath(CLI_REPO_ROOT, "README.md"), String)
@@ -339,22 +384,9 @@ if get(ENV, "COURSE_SELECTION_PROBE_CHILD", "0") != "1"
         probe = """
         course_script = $(repr(COURSE_SCRIPT))
         root = ARGS[1]
-        source = read(course_script, String)
-        guarded = occursin("abspath(PROGRAM_FILE)", source)
-        if guarded
-            include(course_script)
-        else
-            entrypoint = findfirst("\\ntry\\n    exit(main())", source)
-            include_string(Main, source[begin:(first(entrypoint) - 1)], course_script)
-            @eval CourseWorkflow save_progress(path::AbstractString, state::ProgressState) =
-                error("injected persistence failure")
-        end
+        include(course_script)
         try
-            if guarded
-                start_exercise(root, "F02"; persist_progress=(path, state) -> error("injected persistence failure"))
-            else
-                start_exercise(root, "F02")
-            end
+            start_exercise(root, "F02"; persist_progress=(path, state) -> error("injected persistence failure"))
         catch exception
             println("caught: ", sprint(showerror, exception))
         end
@@ -378,5 +410,4 @@ if get(ENV, "COURSE_SELECTION_PROBE_CHILD", "0") != "1"
         @test !occursin("exercise/F02-julia-arrays-and-tests", branches)
         @test progress_snapshot(repo) == before
     end
-end
 end

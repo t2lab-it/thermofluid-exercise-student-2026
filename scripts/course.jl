@@ -26,9 +26,10 @@ const USAGE = """
   julia --project=. $(joinpath("scripts", "course.jl")) check-results
 
 例:
-  julia --project=. $(joinpath("scripts", "course.jl")) start N05-N06
+  julia --project=. $(joinpath("scripts", "course.jl")) start F02
   julia --project=. $(joinpath("scripts", "course.jl")) start F03-F04
-  julia --project=. $(joinpath("scripts", "course.jl")) start N08-N09
+
+必要な教材が配布済みの、次の提出単位だけを開始できます。
 """
 
 git_output(root, arguments...) = readchomp(Cmd(`git $(arguments)`; dir=root))
@@ -72,13 +73,34 @@ function show_status(root)
     println("完了済み: $completed")
 end
 
+function require_unit_assets(root, id)
+    missing = String[]
+    exercises = joinpath(root, "exercises")
+    directories = isdir(exercises) ? readdir(exercises; join=true) : String[]
+    for content_id in TASK_IDS_BY_UNIT[id]
+        starters = filter(directories) do directory
+            startswith(basename(directory), "$(content_id)_") &&
+                isfile(joinpath(directory, "run.jl"))
+        end
+        length(starters) == 1 || push!(missing, "exercises/$(content_id)_*/run.jl（1件必要）")
+        test = joinpath("test", "provided", "$content_id.jl")
+        isfile(joinpath(root, test)) || push!(missing, test)
+    end
+    log = joinpath("learning_logs", "templates", "$id.md")
+    isfile(joinpath(root, log)) || push!(missing, log)
+    isempty(missing) || throw(ArgumentError(
+        "$id の教材が揃っていません: $(join(missing, ", "))。現在の課題を続け、教員に配布状況を確認してください",
+    ))
+    nothing
+end
+
 function start_exercise(root, id; persist_progress=save_progress)
     progress_path = joinpath(root, "course_progress.toml")
     state = load_progress(progress_path)
     require_preflight(root)
     validate_transition(state, id)
+    require_unit_assets(root, id)
     require_local_tests(root)
-    require_result_limits(root)
 
     slug = get(SLUGS, id, nothing)
     isnothing(slug) &&
