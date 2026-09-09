@@ -1,21 +1,7 @@
-# N01: 1次元線形移流方程式を二つの差分法で比較する
-#
-# 受講生が編集するのは、TODO(N01)と書かれた3か所だけです。
-#
-# 読む順序と関数のつながり:
-#   rectangular_initial_condition → upwind_step! / centered_step!
-#   → apply_boundary! → simulate → main
-# `simulate`は初期条件、選択した1ステップの更新、境界条件を順に組み合わせます。
-# `main`は二つの`simulate`を実行し、提供済みの出力処理を呼び出します。
-#
-# このファイルで出会うJuliaの記号:
-#   `value::T`は値の型を示し、`{<:Real}`は実数型の要素を許す指定です。
-#   `:upwind`は名前を表すSymbol、`===`は二つがまったく同じかを比べます。
-#   `condition ? true_value : false_value`は条件で二つの値を選びます。
-#   `(x = x, u = u)`は名前付きの結果をまとめる名前付きタプルです。
-#
-# `include("provided_support.jl")`は、入力検証と出力の詳細を読み込む
-# 「おまじない」です。この補助ファイルを読解・編集する必要はありません。
+# N01: 初期条件、風上差分、中心差分のTODO 3か所を実装する。
+# 読む順: 初期条件 → 1ステップ更新 → 境界条件 → simulate → 診断 → main。
+# 自分の確認はtests.jl、記録はlearning_log.md。実行結果はresults/へ保存する。
+# 入力検証・描画・保存の詳細はprovided_support.jlを参照する。
 
 module N01LinearAdvection
 
@@ -218,6 +204,26 @@ function simulate(;
         cfl = actual_cfl,
         minimum = minimum(u_old),
         maximum = maximum(u_old),
+    )
+end
+
+"""一つの差分法についてTOMLへ書き出す診断量を作る。"""
+function summary_section(scheme::String, result)
+    initial_minimum, initial_maximum = extrema(result.u0)
+    overshoot = max(result.maximum - initial_maximum, 0.0)
+    undershoot = max(initial_minimum - result.minimum, 0.0)
+    tolerance = 100eps(Float64) * max(abs(initial_minimum), abs(initial_maximum), 1.0)
+    return Dict(
+        "scheme" => scheme,
+        "cfl" => result.cfl,
+        "dt" => result.dt,
+        "steps" => result.steps,
+        "minimum" => result.minimum,
+        "maximum" => result.maximum,
+        "overshoot" => overshoot,
+        "undershoot" => undershoot,
+        "overshoot_occurred" => overshoot > tolerance,
+        "undershoot_occurred" => undershoot > tolerance,
     )
 end
 

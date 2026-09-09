@@ -4,7 +4,7 @@
 using Plots
 using TOML
 
-const DEFAULT_OUTPUT_DIR = normpath(joinpath(@__DIR__, "..", "..", "results", "N01"))
+const DEFAULT_OUTPUT_DIR = joinpath(@__DIR__, "results")
 
 """初期条件の引数がN01の実行時の入力条件を満たすか確認する。"""
 function validate_initial_condition_inputs(x, base, plateau, plateau_start, plateau_end)
@@ -52,26 +52,6 @@ function validate_simulation_inputs(scheme, nx, c, cfl, t_final)
     return nothing
 end
 
-"""一つの差分法についてTOMLへ書き出す診断量を作る。"""
-function summary_section(scheme::String, result)
-    initial_minimum, initial_maximum = extrema(result.u0)
-    overshoot = max(result.maximum - initial_maximum, 0.0)
-    undershoot = max(initial_minimum - result.minimum, 0.0)
-    tolerance = 100eps(Float64) * max(abs(initial_minimum), abs(initial_maximum), 1.0)
-    return Dict(
-        "scheme" => scheme,
-        "cfl" => result.cfl,
-        "dt" => result.dt,
-        "steps" => result.steps,
-        "minimum" => result.minimum,
-        "maximum" => result.maximum,
-        "overshoot" => overshoot,
-        "undershoot" => undershoot,
-        "overshoot_occurred" => overshoot > tolerance,
-        "undershoot_occurred" => undershoot > tolerance,
-    )
-end
-
 """機械可読な診断量を書き出し、summary.tomlのパスを返す。"""
 function write_summary(output_dir::AbstractString, upwind, centered)
     mkpath(output_dir)
@@ -95,19 +75,19 @@ function make_plots(output_dir::AbstractString, upwind, centered)
     centered_path = joinpath(output_dir, "centered-euler.png")
 
     for (result, title, path) in (
-        (upwind, "風上差分 + Euler（安定）", upwind_path),
-        (centered, "中心差分 + Euler（意図的に不安定）", centered_path),
+        (upwind, "Upwind + Euler (stable)", upwind_path),
+        (centered, "Centered + Euler (intentionally unstable)", centered_path),
     )
         plot(
             result.x,
             result.u0;
-            label = "初期値",
+            label = "Initial",
             linewidth = 2,
             xlabel = "x",
             ylabel = "u",
             title = title,
         )
-        plot!(result.x, result.u; label = "最終値", linewidth = 2)
+        plot!(result.x, result.u; label = "Final", linewidth = 2)
         savefig(path)
     end
     return (upwind = upwind_path, centered = centered_path)

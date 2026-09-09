@@ -1,68 +1,22 @@
 using Test
+using ThermofluidExercise
 
-ARGS in (String[], ["--course-only"], ["--maintenance"]) ||
-    error("使い方: test/runtests.jl [--maintenance]")
-
+isempty(ARGS) || error("使い方: julia --project=. -e 'using Pkg; Pkg.test()'")
 const REPO_ROOT = normpath(joinpath(@__DIR__, ".."))
-
 include(joinpath(REPO_ROOT, "scripts", "lib", "CourseWorkflow.jl"))
-using .CourseWorkflow
 include(joinpath(REPO_ROOT, "scripts", "lib", "ResultLimits.jl"))
+using .CourseWorkflow
 using .ResultLimits
 
-function run_fixture_course_tests(task_test_root, state)
-    for id in tests_to_run(state)
-        path = joinpath(task_test_root, "$(id)_test.jl")
-        isfile(path) || error("missing local test: $path")
-        include(path)
-    end
-end
-
-function run_course_tests(provided_root, student_root, state)
-    for id in tests_to_run(state)
-        provided = joinpath(provided_root, "$id.jl")
-        isfile(provided) || error("missing provided course test: $provided")
-        include(provided)
-
-        student = joinpath(student_root, "$id.jl")
-        isfile(student) && include(student)
-    end
-end
-
 state = load_progress(joinpath(REPO_ROOT, "course_progress.toml"))
-fixture_root = get(ENV, "COURSE_TASK_TEST_ROOT", nothing)
-provided_root = get(ENV, "COURSE_PROVIDED_TEST_ROOT", joinpath(@__DIR__, "provided"))
-student_root = get(ENV, "COURSE_STUDENT_TEST_ROOT", joinpath(@__DIR__, "student"))
-
-if "--maintenance" in ARGS
-    workflow_root = get(ENV, "COURSE_WORKFLOW_TEST_ROOT", joinpath(@__DIR__, "workflow"))
-    workflow_files = sort(filter(
-        path -> endswith(path, "_test.jl"),
-        readdir(workflow_root; join=true),
-    ))
-    @testset "workflow tests" begin
-        for path in workflow_files
-            command = Cmd(Cmd([
-                Base.julia_cmd().exec...,
-                "--startup-file=no",
-                "--project=.",
-                path,
-            ]); dir=REPO_ROOT)
-            process = run(ignorestatus(command))
-            @test process.exitcode == 0
+for unit in units_to_test(state)
+    for name in ("provided_tests.jl", "tests.jl")
+        path = joinpath(REPO_ROOT, unit_directory(unit), name)
+        isfile(path) || error("$unit の必須テストがありません: $path")
+        @testset "$unit / $name" begin
+            include(path)
         end
     end
 end
-
-if isnothing(fixture_root)
-    isdir(provided_root) || error("provided course test root does not exist: $provided_root")
-    run_course_tests(provided_root, student_root, state)
-else
-    run_fixture_course_tests(fixture_root, state)
-end
-
-results = joinpath(REPO_ROOT, "results")
-if isdir(results)
-    violations = check_result_limits(results)
-    isempty(violations) || error(join(violations, '\n'))
-end
+violations = check_result_limits(REPO_ROOT)
+isempty(violations) || error(join(violations, '\n'))

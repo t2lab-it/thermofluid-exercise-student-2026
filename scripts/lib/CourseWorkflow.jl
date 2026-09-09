@@ -3,7 +3,7 @@ module CourseWorkflow
 using TOML
 
 export ORDERED_UNITS, TASK_IDS_BY_UNIT, ProgressState, load_progress, save_progress,
-       tests_to_run, validate_transition
+       tests_to_run, validate_transition, UNIT_DIRECTORIES, unit_directory, units_to_test
 
 const ORDERED_UNITS = [
     "F00", "F01", "F02", "F03-F04",
@@ -88,6 +88,27 @@ function save_progress(path, state::ProgressState)
         rm(temporary_path; force=true)
     end
     nothing
+end
+
+const UNIT_DIRECTORIES = Dict(
+    "F00" => "F00_environment",
+    "F01" => "F01_first_pull_request",
+    "F02" => "F02_julia_arrays_and_tests",
+    "F03-F04" => "F03-F04_vector_calculus",
+    "N01" => "N01_linear_advection",
+    "N02" => "N02_nonlinear_advection",
+    "N03" => "N03_diffusion",
+    "N04" => "N04_advection_diffusion",
+    "N05-N06" => "N05-N06_common_package_2d_advection",
+    "N07" => "N07_2d_advection_diffusion",
+    "N08-N09" => "N08-N09_laplace_poisson",
+)
+
+unit_directory(id) = joinpath("exercises", UNIT_DIRECTORIES[id])
+
+function units_to_test(state::ProgressState)
+    _validate(state)
+    filter(!=("F00"), vcat(state.completed, [state.current]))
 end
 
 function tests_to_run(state::ProgressState)

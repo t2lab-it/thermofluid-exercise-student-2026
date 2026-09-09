@@ -1,7 +1,6 @@
 using Test
 
-const F01_REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
-const F01_RUN_SCRIPT = joinpath(F01_REPO_ROOT, "exercises", "F01_first_pull_request", "run.jl")
+const F01_RUN_SCRIPT = joinpath(@__DIR__, "run.jl")
 
 @testset "F01 first pull request" begin
     @testset "stable greeting API" begin

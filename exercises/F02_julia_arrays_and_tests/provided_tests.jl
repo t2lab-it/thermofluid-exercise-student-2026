@@ -1,8 +1,6 @@
 using Test
 
-const F02_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
-const F02_RUN = joinpath(F02_ROOT, "exercises", "F02_julia_arrays_and_tests", "run.jl")
-const F02_LOG = joinpath(F02_ROOT, "learning_logs", "templates", "F02.md")
+const F02_RUN = joinpath(@__DIR__, "run.jl")
 
 @testset "F02 arrays, functions, and tests" begin
     @test isfile(F02_RUN)
@@ -29,5 +27,4 @@ const F02_LOG = joinpath(F02_ROOT, "learning_logs", "templates", "F02.md")
         @test_throws MethodError F02JuliaArraysAndTests.mean_temperature(["cold", "hot"])
     end
 
-    @test isfile(F02_LOG)
 end
