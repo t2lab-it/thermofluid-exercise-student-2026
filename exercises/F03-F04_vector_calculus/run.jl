@@ -1,5 +1,5 @@
 if !isdefined(Main, :F03VectorCalculus)
-    include(normpath(joinpath(@__DIR__, "..", "F03_vector_calculus", "run.jl")))
+    include(joinpath(@__DIR__, "F03.jl"))
 end
 
 module F04NumericalDifferentiation

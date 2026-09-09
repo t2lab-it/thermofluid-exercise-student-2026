@@ -44,9 +44,7 @@ function require_preflight(root)
 end
 
 function require_result_limits(root)
-    results = joinpath(root, "results")
-    isdir(results) || return nothing
-    violations = check_result_limits(results)
+    violations = check_result_limits(root)
     isempty(violations) || throw(ArgumentError(join(violations, '\n')))
     nothing
 end
@@ -58,7 +56,6 @@ function require_local_tests(root)
         "--startup-file=no",
         "--project=.",
         runner,
-        "--course-only",
     ]); dir=root)
     process = run(ignorestatus(command))
     process.exitcode == 0 ||
@@ -71,23 +68,31 @@ function show_status(root)
     completed = isempty(state.completed) ? "なし" : join(state.completed, ", ")
     println("現在の提出単位: $(state.current)")
     println("完了済み: $completed")
+    if state.current == "F00"
+        println("環境診断: julia --project=. scripts/course.jl preflight")
+        return
+    end
+    for id in TASK_IDS_BY_UNIT[state.current]
+        println("課題ページ: https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/$id.html")
+    end
+    directory = unit_directory(state.current)
+    println("開くフォルダ: $directory/")
+    println("編集するファイル: run.jl、tests.jl、learning_log.md")
+    state.current in ("N05-N06", "N07", "N08-N09") && println("共通コード: src/")
+    println("実行: julia --project=. $(joinpath(directory, "run.jl"))")
+    println("テスト: julia --project=. -e 'using Pkg; Pkg.test()'")
 end
 
 function require_unit_assets(root, id)
     missing = String[]
-    exercises = joinpath(root, "exercises")
-    directories = isdir(exercises) ? readdir(exercises; join=true) : String[]
-    for content_id in TASK_IDS_BY_UNIT[id]
-        starters = filter(directories) do directory
-            startswith(basename(directory), "$(content_id)_") &&
-                isfile(joinpath(directory, "run.jl"))
-        end
-        length(starters) == 1 || push!(missing, "exercises/$(content_id)_*/run.jl（1件必要）")
-        test = joinpath("test", "provided", "$content_id.jl")
-        isfile(joinpath(root, test)) || push!(missing, test)
+    directory = unit_directory(id)
+    required = ["run.jl", "provided_tests.jl", "tests.jl", "learning_log.md"]
+    id == "F03-F04" && push!(required, "F03.jl")
+    id == "N01" && push!(required, "provided_support.jl")
+    for name in required
+        relative = joinpath(directory, name)
+        isfile(joinpath(root, relative)) || push!(missing, relative)
     end
-    log = joinpath("learning_logs", "templates", "$id.md")
-    isfile(joinpath(root, log)) || push!(missing, log)
     isempty(missing) || throw(ArgumentError(
         "$id の教材が揃っていません: $(join(missing, ", "))。現在の課題を続け、教員に配布状況を確認してください",
     ))
@@ -126,6 +131,7 @@ function start_exercise(root, id; persist_progress=save_progress)
     end
 
     println("$(id)をbranch $(branch)で開始しました。")
+    show_status(root)
     println("作業をcommitしたら、次のコマンドでpushしてください:")
     println("  git push -u origin $branch")
     println("その後、ホスティングサービスで$(branch)のpull requestを作成してください。")

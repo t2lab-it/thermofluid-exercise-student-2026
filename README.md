@@ -1,81 +1,54 @@
 # 熱流体力学演習（2026）学生用リポジトリ
 
-2026年度「熱流体力学演習」の個人課題用リポジトリです．
-Juliaによる数値計算，テスト，Git／GitHub，学習ログ，AIエージェントを組み合わせて，結果を検証しながらコードを開発します．
+数式・実装・テストを対応させ、数値結果と限界を説明するための個人課題リポジトリです。
 
 <!-- contract-section: assigned_repository -->
-
-## 必要な環境
+## 初回の準備
 
 - Julia 1.12.7
 - Git
 - VS Code
-- GitHub Copilot，OpenAI Codex，Amazon Q Developerのいずれか一つ
+- GitHub Copilot、OpenAI Codex、Amazon Q Developerのいずれか一つ
 
-詳しい導入手順は公開教材の[環境診断](https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F00.html)を参照してください．
+招待を受諾し、割り当てられた自分の学生リポジトリを複製します。
+[環境診断](https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F00.html)と
+[Git・GitHubの準備](https://t2lab-it.github.io/thermofluid-exercise-2026/setup/git-github.html)に沿って進めてください。
 
-## 利用開始
-
-GitHubのリポジトリ招待を受諾した後，割り当てられた自分の学生リポジトリをHTTPSで複製し，リポジトリのルートで依存関係を準備します．
-詳しい導入手順は公開教材の[Git・GitHub・個人課題用リポジトリ](https://t2lab-it.github.io/thermofluid-exercise-2026/setup/git-github.html)を参照してください．
-
-## 課題の進め方
-
-課題開始方法には次の例外があります．
-
-- `F00`: branch，commit，push，pull request，学習ログを作りません．
-- `F01`: 課題branchを手動で作り，最初のpull requestを経験します．
-- `F02`以降: 前課題をmergeして変更のない`main`へ戻った後，`course.jl start <ID>`で次の課題を開始します．
-- `N05`・`N06`は提出単位`N05-N06`として1 branch，1 PR，1学習ログで完了します．
-  - `F03`・`F04`と`N08`・`N09`も同様です．
-  - 開始時は個別の内容IDではなく，`course.jl start F03-F04`のようなコマンドを使います．
-
-通常課題の進め方は公開教材の[課題のbranch・PRワークフロー](https://t2lab-it.github.io/thermofluid-exercise-2026/guides/workflow.html)を参照してください．
-
-## 主要コマンド
-
-```bash
-# F00の環境診断
+```fish
 julia --project=. scripts/course.jl preflight
+```
 
-# F02以降の課題開始例
-julia --project=. scripts/course.jl start F02
+## 課題を開く
 
-# 現在課題と完了済み課題
+[公開課題ページ](https://t2lab-it.github.io/thermofluid-exercise-2026/)から、対応するローカルの課題フォルダを開きます。
+通常編集するのは `run.jl`（実装）、`tests.jl`（自分の確認）、`learning_log.md`（記録）です。
+同じ場所の `provided_tests.jl` で教員提供の数値・入出力テストを読めます。
+
+| 提出単位 | フォルダ | 内容 |
+|---|---|---|
+| F00 | `exercises/F00_environment/` | 環境診断 |
+| F01 | `exercises/F01_first_pull_request/` | 最初のPR |
+| F02 | `exercises/F02_julia_arrays_and_tests/` | 配列・関数・テスト |
+| F03-F04 | `exercises/F03-F04_vector_calculus/` | ベクトル解析・数値微分 |
+| N01 | `exercises/N01_linear_advection/` | 一次元線形移流 |
+
+```fish
 julia --project=. scripts/course.jl status
+```
 
-# 公式生成物のサイズ制限
-julia --project=. scripts/course.jl check-results
+F01の手動branch作成、F02以降の課題開始、提出順は[課題ワークフロー](https://t2lab-it.github.io/thermofluid-exercise-2026/guides/workflow.html)を参照してください。
+N02以降は順次追加します。必要な教材が揃うまでは `start` がbranchと進捗を変更せず終了します。
 
-# 完了済み課題と現在課題のローカルテスト
+## 実行とテスト
+
+リポジトリのルートで、課題ページに記載された `run.jl` を実行します。
+
+```fish
 julia --project=. -e 'using Pkg; Pkg.test()'
 ```
 
-`Pkg.test()`とCIは現在・完了済み課題のテストと生成物サイズを確認します．教材開発者用の検査は通常の課題テストから分けています．
+現在・完了済みの課題を検証します。開始した課題の未実装や未記入の自作テストは失敗します。
+結果がある課題では、実行時に課題内の `results/` が作られます。図・数値を確認し、ログから参照してcommitします。
 
-## リポジトリ構成
-
-| パス                                   | 役割                                                        |
-| -------------------------------------- | ----------------------------------------------------------- |
-| `exercises/`                           | 課題ごとのスターターと公式`run.jl`                          |
-| `test/provided/`                       | 教員が提供する公開テスト                                    |
-| `test/student/`                        | 学生が課題ごとに追加するテスト                              |
-| `learning_logs/`                       | 学習ログのテンプレートと記入済みログ                        |
-| `results/`                             | 公式`run.jl`が生成する提出対象の結果                        |
-| `scratch/`                             | 一時的な試行．正式な成果物は置かない                        |
-| `scripts/`                             | 課題進行と生成物検査の補助コマンド                          |
-| `src/`                                 | 後半課題で共通化するJuliaコード                             |
-| [`FINAL_PROJECT.md`](FINAL_PROJECT.md) | N09までの必要なコードを別のプロジェクトリポジトリへ移す手順 |
-
-## 現在の収録範囲
-
-| 課題ID | 内容                                              |
-| ------ | ------------------------------------------------- |
-| `F00`  | 環境診断                                          |
-| `F01`  | 最初のpull request                                |
-| `F02`  | Juliaの配列・関数・テスト                         |
-| `F03`  | ベクトル解析の公式，解析微分（提出単位`F03-F04`） |
-| `F04`  | 数値微分と格子収束（提出単位`F03-F04`）           |
-| `N01`  | 1次元線形移流方程式                               |
-
-`N02`以降の数値課題は順次追加します．必要なスターター・提供テスト・学習ログ様式が揃うまで，`start`は進捗とbranchを変更せず終了します．
+詳しい[コマンド一覧](https://t2lab-it.github.io/thermofluid-exercise-2026/guides/commands.html)と
+[最終プロジェクトへの移行](https://t2lab-it.github.io/thermofluid-exercise-2026/guides/final-project-handoff.html)も参照してください。
