@@ -48,7 +48,7 @@ const TOOLING_REPO_ROOT = normpath(joinpath(@__DIR__, "..", ".."))
 
     readme = read(readme_path, String)
     for marker in (
-        "- Julia 1.12.6\n- Git\n- VS Code\n",
+        "- Julia 1.12.7\n- Git\n- VS Code\n",
         "https://t2lab-it.github.io/thermofluid-exercise-2026/setup/git-github.html",
         "https://t2lab-it.github.io/thermofluid-exercise-2026/guides/workflow.html",
         "julia --project=. scripts/course.jl preflight\n",

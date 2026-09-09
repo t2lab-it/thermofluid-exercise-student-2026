@@ -14,7 +14,7 @@ export ObservedCheck,
     print_preflight,
     run_f00_preflight
 
-const REQUIRED_JULIA_VERSION = v"1.12.6"
+const REQUIRED_JULIA_VERSION = v"1.12.7"
 const SUPPORTED_AGENTS = ("copilot", "codex", "amazon-q")
 
 struct ObservedCheck
@@ -54,7 +54,7 @@ function collect_preflight(;
         :julia,
         julia_version == REQUIRED_JULIA_VERSION,
         string(julia_version),
-        "JuliaupでJulia 1.12.6をインストールして選択し、この確認を再実行してください。",
+        "JuliaupでJulia 1.12.7をインストールして選択し、この確認を再実行してください。",
     )
 
     git_probe = command_probe("git", ["--version"])

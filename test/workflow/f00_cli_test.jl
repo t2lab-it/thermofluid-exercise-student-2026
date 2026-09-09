@@ -7,7 +7,7 @@ contains_japanese(text::AbstractString) = occursin(r"[ぁ-んァ-ヶ一-龠]", t
 
 function passing_preflight_report()
     PreflightReport(
-        ObservedCheck(:julia, true, "1.12.6", ""),
+        ObservedCheck(:julia, true, "1.12.7", ""),
         ObservedCheck(:git, true, "git version test", ""),
         ObservedCheck(:vscode, true, "VS Code test", ""),
     )
@@ -15,7 +15,7 @@ end
 
 function failing_preflight_report()
     PreflightReport(
-        ObservedCheck(:julia, true, "1.12.6", ""),
+        ObservedCheck(:julia, true, "1.12.7", ""),
         ObservedCheck(:git, false, "git not found", "Install Git"),
         ObservedCheck(:vscode, false, "code not found", "Install VS Code"),
     )

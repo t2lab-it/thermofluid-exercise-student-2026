@@ -7,7 +7,7 @@ Juliaによる数値計算，テスト，Git／GitHub，学習ログ，AIエー�
 
 ## 必要な環境
 
-- Julia 1.12.6
+- Julia 1.12.7
 - Git
 - VS Code
 - GitHub Copilot，OpenAI Codex，Amazon Q Developerのいずれか一つ
