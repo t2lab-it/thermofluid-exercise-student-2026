@@ -7,7 +7,7 @@ Juliaによる数値計算，テスト，Git／GitHub，学習ログ，AIエー�
 
 ## 必要な環境
 
-- Julia 1.12.6
+- Julia 1.12.7
 - Git
 - VS Code
 - GitHub Copilot，OpenAI Codex，Amazon Q Developerのいずれか一つ
@@ -51,6 +51,8 @@ julia --project=. scripts/course.jl check-results
 julia --project=. -e 'using Pkg; Pkg.test()'
 ```
 
+`Pkg.test()`とCIは現在・完了済み課題のテストと生成物サイズを確認します．教材開発者用の検査は通常の課題テストから分けています．
+
 ## リポジトリ構成
 
 | パス                                   | 役割                                                        |
@@ -75,8 +77,5 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 | `F03`  | ベクトル解析の公式，解析微分（提出単位`F03-F04`） |
 | `F04`  | 数値微分と格子収束（提出単位`F03-F04`）           |
 | `N01`  | 1次元線形移流方程式                               |
-| `N07`  | 二次元拡散・移流拡散                              |
-| `N08`  | PDE分類・Laplace方程式                            |
-| `N09`  | Poisson方程式                                     |
 
-`N02`以降の数値課題は順次追加します．
+`N02`以降の数値課題は順次追加します．必要なスターター・提供テスト・学習ログ様式が揃うまで，`start`は進捗とbranchを変更せず終了します．

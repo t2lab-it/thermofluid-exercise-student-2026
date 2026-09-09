@@ -1,9 +1,14 @@
 using Test
 
+ARGS in (String[], ["--course-only"], ["--maintenance"]) ||
+    error("使い方: test/runtests.jl [--maintenance]")
+
 const REPO_ROOT = normpath(joinpath(@__DIR__, ".."))
 
 include(joinpath(REPO_ROOT, "scripts", "lib", "CourseWorkflow.jl"))
 using .CourseWorkflow
+include(joinpath(REPO_ROOT, "scripts", "lib", "ResultLimits.jl"))
+using .ResultLimits
 
 function run_fixture_course_tests(task_test_root, state)
     for id in tests_to_run(state)
@@ -29,14 +34,7 @@ fixture_root = get(ENV, "COURSE_TASK_TEST_ROOT", nothing)
 provided_root = get(ENV, "COURSE_PROVIDED_TEST_ROOT", joinpath(@__DIR__, "provided"))
 student_root = get(ENV, "COURSE_STUDENT_TEST_ROOT", joinpath(@__DIR__, "student"))
 
-if "--course-only" in ARGS
-    if isnothing(fixture_root)
-        isdir(provided_root) || error("provided course test root does not exist: $provided_root")
-        run_course_tests(provided_root, student_root, state)
-    else
-        run_fixture_course_tests(fixture_root, state)
-    end
-else
+if "--maintenance" in ARGS
     workflow_root = get(ENV, "COURSE_WORKFLOW_TEST_ROOT", joinpath(@__DIR__, "workflow"))
     workflow_files = sort(filter(
         path -> endswith(path, "_test.jl"),
@@ -54,12 +52,17 @@ else
             @test process.exitcode == 0
         end
     end
+end
 
-    withenv("COURSE_NORMAL_PHASE" => "1") do
-        if isnothing(fixture_root)
-            isdir(provided_root) && run_course_tests(provided_root, student_root, state)
-        else
-            run_fixture_course_tests(fixture_root, state)
-        end
-    end
+if isnothing(fixture_root)
+    isdir(provided_root) || error("provided course test root does not exist: $provided_root")
+    run_course_tests(provided_root, student_root, state)
+else
+    run_fixture_course_tests(fixture_root, state)
+end
+
+results = joinpath(REPO_ROOT, "results")
+if isdir(results)
+    violations = check_result_limits(results)
+    isempty(violations) || error(join(violations, '\n'))
 end

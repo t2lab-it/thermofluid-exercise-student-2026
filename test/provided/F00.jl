@@ -16,7 +16,7 @@ using .CourseWorkflow
 contains_japanese(text::AbstractString) = occursin(r"[ぁ-んァ-ヶ一-龠]", text)
 
 function f00_report(; julia_ok=true, git_ok=true, vscode_ok=true, julia_extension_ok=true)
-    versions = () -> julia_ok ? v"1.12.6" : v"1.12.5"
+    versions = () -> julia_ok ? v"1.12.7" : v"1.12.6"
     commands = function (program, arguments)
         if program == "git"
             return (available=git_ok, detail=git_ok ? "git version test" : "git not found")
@@ -44,7 +44,7 @@ end
         report = f00_report()
         @test report.julia.id == :julia
         @test report.julia.passed
-        @test report.julia.observed == "1.12.6"
+        @test report.julia.observed == "1.12.7"
         @test report.git.id == :git
         @test report.git.passed
         @test report.vscode.id == :vscode
@@ -53,7 +53,7 @@ end
         wrong_patch = f00_report(julia_ok=false)
         @test !wrong_patch.julia.passed
         @test contains_japanese(wrong_patch.julia.action)
-        @test occursin("1.12.6", wrong_patch.julia.action)
+        @test occursin("1.12.7", wrong_patch.julia.action)
 
         missing_git = f00_report(git_ok=false)
         @test !missing_git.git.passed
