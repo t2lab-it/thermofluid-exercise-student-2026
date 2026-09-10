@@ -49,7 +49,7 @@ N02以降は順次追加します。必要な教材が揃うまでは `start` �
 julia --project=. -e 'using Pkg; Pkg.test()'
 ```
 
-現在・完了済みの課題を検証します。開始した課題の未実装や未記入の自作テストは失敗します。
+現在・完了済みの課題を検証します。開始した課題の未実装や、学生記入対象の未記入テストは失敗します。
 結果がある課題では、実行時に課題内の `results/` が作られます。図・数値を確認し、ログから参照してcommitします。
 
 詳しい[コマンド一覧](https://t2lab-it.github.io/thermofluid-exercise-2026/guides/commands.html)と

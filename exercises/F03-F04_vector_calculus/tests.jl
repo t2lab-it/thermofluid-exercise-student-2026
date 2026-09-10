@@ -3,13 +3,20 @@ using Test
 if !isdefined(Main, :F04NumericalDifferentiation)
     include(joinpath(@__DIR__, "run.jl"))
 end
+using .F04NumericalDifferentiation
 
-@testset "F03-F04 必須テスト" begin
-    # TODO(必須): 二次関数、評価点、刻み幅を自分で選び、forward_difference、backward_difference、centered_differenceの三つを手計算した期待値で区別して確かめる。
-    @test false
+@testset "F03-F04 必須テスト（配布済み）" begin
+    quadratic(x) = x^2
+    @test forward_difference(quadratic, 2.0, 0.5) ≈ 4.5
+    @test backward_difference(quadratic, 2.0, 0.5) ≈ 3.5
+    @test centered_difference(quadratic, 2.0, 0.5) ≈ 4.0
 
-    # TODO(必須): 同じ滑らかな関数で刻み幅を半分にし、前進・後退・中心差分の誤差がそれぞれ理論どおりの収束次数を示すことを確かめる。期待値と許容範囲は自分で導く。
-    @test false
+    cubic(x) = x^3
+    cubic_derivative(x) = 3x^2
+    study = convergence_study(cubic, cubic_derivative, 1.0, [0.2, 0.1, 0.05])
+    @test all(ratio -> 1.8 <= ratio <= 2.2, study.forward_ratios)
+    @test all(ratio -> 1.8 <= ratio <= 2.2, study.backward_ratios)
+    @test all(ratio -> 3.9 <= ratio <= 4.1, study.centered_ratios)
 end
 
 @testset "F03-F04 自作テスト" begin

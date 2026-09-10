@@ -4,18 +4,16 @@ if !isdefined(Main, :F02JuliaArraysAndTests)
     include(joinpath(@__DIR__, "run.jl"))
 end
 
-@testset "F02 必須テスト" begin
-    # TODO(必須): 有限値の配列を一つ選び、mean_temperatureの平均とtemperature_anomalyの偏差配列を手計算した期待値で確かめる。
-    @test false
+@testset "F02 必須テスト（配布済み）" begin
+    values = [5.0, 7.0, 12.0]
+    original = copy(values)
+    anomalies = F02JuliaArraysAndTests.temperature_anomaly(values)
 
-    # TODO(必須): 上で選んだ配列の偏差の総和が丸め誤差の範囲で0になることを確かめる。許容誤差は根拠を持って選ぶ。
-    @test false
-
-    # TODO(必須): temperature_anomalyを呼んでも入力配列が変化しないことを、呼出し前のコピーと比較して確かめる。
-    @test false
-
-    # TODO(必須): 空配列、NaN、Infのいずれか一つを選び、対象APIがArgumentErrorとして拒否することを確かめる。
-    @test false
+    @test F02JuliaArraysAndTests.mean_temperature(values) == 8.0
+    @test anomalies == [-3.0, -1.0, 4.0]
+    @test isapprox(sum(anomalies), 0.0; atol=100eps())
+    @test values == original
+    @test_throws ArgumentError F02JuliaArraysAndTests.mean_temperature(Float64[])
 end
 
 @testset "F02 自作テスト" begin
