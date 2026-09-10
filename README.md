@@ -5,17 +5,23 @@
 <!-- contract-section: assigned_repository -->
 ## 初回の準備
 
-- Julia 1.12.7
+- Julia 1.13.0
 - Git
 - VS Code
 - GitHub Copilot、OpenAI Codex、Amazon Q Developerのいずれか一つ
 
-招待を受諾し、割り当てられた自分の学生リポジトリを複製します。
+## 対応環境
+
+Windows では，演習に必要な Julia，Git，SSH，VS Code，Julia 拡張機能，コーディングエージェントを WSL2 の Ubuntu 24.04 側で実行します．Windows の PowerShell，Windows版 Julia，Windows版 Git，Git Bash，WSL1 は演習環境として対応しません．
+WSL2 の学生リポジトリは /home/<user>/... に SSH で複製し，Windows の VS Code は Remote - WSL でそのLinux側フォルダーを開いてください．/mnt/c/... 上の実行も対応しません．
+macOS と native Linux は，それぞれのOS側の Julia，Git，SSH，VS Code，エージェントを使う構成を対応します．
+
+招待を受諾し、WSL2では /home/<user>/... の下へ割り当てられた自分の学生リポジトリをSSHで複製します。
 [環境診断](https://t2lab-it.github.io/thermofluid-exercise-2026/assignments/F00.html)と
 [Git・GitHubの準備](https://t2lab-it.github.io/thermofluid-exercise-2026/setup/git-github.html)に沿って進めてください。
 
 ```fish
-julia --project=. scripts/course.jl preflight
+julia --project=. scripts/course.jl preflight --confirm-vscode --confirm-github --confirm-agent codex
 ```
 
 ## 課題を開く

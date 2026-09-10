@@ -1,5 +1,9 @@
 # コントリビューション
 
+## 対応環境
+
+Windowsで課題を実行する場合は，WSL2 Ubuntu 24.04 のLinux側でJulia，Git，SSH，VS Code Remote - WSL，Julia拡張機能，エージェントを使います．native Windows，WSL1，Git Bash，/mnt/c/... 上の課題実行は対応しません．macOSとnative Linuxは各OS側の環境を使います．
+
 ## 履修者の課題branchとPR
 
 自分に割り当てられたリポジトリでは、`main`から課題branchを作り、変更・テスト・学習ログをそろえてから`main`へのpull request（PR）を作成します。PRではテンプレートに沿って、diffとGitHub Actionsを確認してください。
