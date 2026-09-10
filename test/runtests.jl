@@ -10,12 +10,10 @@ using .ResultLimits
 
 state = load_progress(joinpath(REPO_ROOT, "course_progress.toml"))
 for unit in units_to_test(state)
-    for name in ("provided_tests.jl", "tests.jl")
-        path = joinpath(REPO_ROOT, unit_directory(unit), name)
-        isfile(path) || error("$unit の必須テストがありません: $path")
-        @testset "$unit / $name" begin
-            include(path)
-        end
+    path = joinpath(REPO_ROOT, unit_directory(unit), "tests.jl")
+    isfile(path) || error("$unit の必須テストがありません: $path")
+    @testset "$unit / tests.jl" begin
+        include(path)
     end
 end
 violations = check_result_limits(REPO_ROOT)

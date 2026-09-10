@@ -22,7 +22,7 @@ julia --project=. scripts/course.jl preflight
 
 [公開課題ページ](https://t2lab-it.github.io/thermofluid-exercise-2026/)から、対応するローカルの課題フォルダを開きます。
 通常編集するのは `run.jl`（実装）、`tests.jl`（自分の確認）、`learning_log.md`（記録）です。
-同じ場所の `provided_tests.jl` で教員提供の数値・入出力テストを読めます。
+課題ごとの `tests.jl` には、必須の数値・入出力テストと自分で設計するテストの TODO があります。
 
 理解度チェックを行った授業では，AIとの対話全文を `understanding-check-<lesson-id>.txt` というUTF-8テキストに保存し，対応するLETUSの課題へ提出します．対話全文はこのリポジトリやPRへ追加せず，課題内の `learning_log.md` には提出済みの確認と学んだ点だけを記録します．
 
@@ -49,7 +49,7 @@ N02以降は順次追加します。必要な教材が揃うまでは `start` �
 julia --project=. -e 'using Pkg; Pkg.test()'
 ```
 
-現在・完了済みの課題を検証します。開始した課題の未実装や未記入の自作テストは失敗します。
+現在・完了済みの課題を検証します。開始した課題の未実装や、学生記入対象の未記入テストは失敗します。
 結果がある課題では、実行時に課題内の `results/` が作られます。図・数値を確認し、ログから参照してcommitします。
 
 詳しい[コマンド一覧](https://t2lab-it.github.io/thermofluid-exercise-2026/guides/commands.html)と
