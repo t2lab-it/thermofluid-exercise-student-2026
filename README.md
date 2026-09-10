@@ -22,7 +22,7 @@ julia --project=. scripts/course.jl preflight
 
 [公開課題ページ](https://t2lab-it.github.io/thermofluid-exercise-2026/)から、対応するローカルの課題フォルダを開きます。
 通常編集するのは `run.jl`（実装）、`tests.jl`（自分の確認）、`learning_log.md`（記録）です。
-同じ場所の `provided_tests.jl` で教員提供の数値・入出力テストを読めます。
+課題ごとの `tests.jl` には、必須の数値・入出力テストと自分で設計するテストの TODO があります。
 
 | 提出単位 | フォルダ | 内容 |
 |---|---|---|

@@ -86,7 +86,7 @@ end
 function require_unit_assets(root, id)
     missing = String[]
     directory = unit_directory(id)
-    required = ["run.jl", "provided_tests.jl", "tests.jl", "learning_log.md"]
+    required = ["run.jl", "tests.jl", "learning_log.md"]
     id == "F03-F04" && push!(required, "F03.jl")
     id == "N01" && push!(required, "provided_support.jl")
     for name in required
