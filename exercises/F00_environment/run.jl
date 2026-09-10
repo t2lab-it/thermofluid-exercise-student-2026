@@ -114,14 +114,19 @@ default_runtime_probe() = (
 
 function workspace_check(runtime, workspace)
     path = normpath(String(workspace))
-    mounted_windows_filesystem =
-        runtime.kind == :wsl2 && (path == "/mnt/c" || startswith(path, "/mnt/c/"))
-    passed = runtime.passed && !mounted_windows_filesystem
+    linux_home_workspace =
+        startswith(path, "/home/") && length(path) > length("/home/")
+    outside_linux_home = runtime.kind == :wsl2 && !linux_home_workspace
+    passed = runtime.passed && !outside_linux_home
     observed = "pwd: $path"
 
-    if mounted_windows_filesystem
-        observed *= " (Windows側/mnt/c)"
-        action = "WSL2では学生リポジトリを /home/<user>/... にcloneし、/mnt/c/...からF00を実行しないでください。"
+    if outside_linux_home
+        if path == "/mnt/c" || startswith(path, "/mnt/c/")
+            observed *= " (Windows側/mnt/c)"
+        else
+            observed *= " (WSL2のLinux filesystem外)"
+        end
+        action = "WSL2では学生リポジトリを /home/<user>/... にcloneし、Linux filesystem内でF00を実行してください。"
     elseif !runtime.passed
         action = runtime.action
     else

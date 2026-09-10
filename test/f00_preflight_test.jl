@@ -84,6 +84,13 @@ end
         mounted = f00_report(runtime_kind=:wsl2, workspace="/mnt/c/course")
         @test !mounted.workspace.passed
         @test occursin("/home/<user>", mounted.workspace.action)
+
+        @test f00_report(runtime_kind=:wsl2, workspace="/home/student/course").workspace.passed
+        for workspace in ("/mnt/c/course", "/mnt/d/course", "/tmp/course")
+            outside_linux_home = f00_report(runtime_kind=:wsl2, workspace=workspace)
+            @test !outside_linux_home.workspace.passed
+            @test occursin("/home/<user>", outside_linux_home.workspace.action)
+        end
     end
 
     @testset "machine-observed checks are structured and exact" begin
