@@ -7,6 +7,7 @@ include(joinpath(REPO_ROOT, "scripts", "lib", "CourseWorkflow.jl"))
 include(joinpath(REPO_ROOT, "scripts", "lib", "ResultLimits.jl"))
 using .CourseWorkflow
 using .ResultLimits
+include(joinpath(REPO_ROOT, "test", "f00_preflight_test.jl"))
 
 state = load_progress(joinpath(REPO_ROOT, "course_progress.toml"))
 for unit in units_to_test(state)

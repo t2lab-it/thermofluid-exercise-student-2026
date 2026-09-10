@@ -20,7 +20,7 @@ const SLUGS = Dict(
 
 const USAGE = """
 使い方:
-  julia --project=. $(joinpath("scripts", "course.jl")) preflight [--confirm-github --confirm-agent <copilot|codex|amazon-q>]
+  julia --project=. $(joinpath("scripts", "course.jl")) preflight [--confirm-vscode --confirm-github --confirm-agent <copilot|codex|amazon-q>]
   julia --project=. $(joinpath("scripts", "course.jl")) start <ID>
   julia --project=. $(joinpath("scripts", "course.jl")) status
   julia --project=. $(joinpath("scripts", "course.jl")) check-results
