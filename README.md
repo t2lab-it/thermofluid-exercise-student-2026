@@ -24,6 +24,8 @@ julia --project=. scripts/course.jl preflight
 通常編集するのは `run.jl`（実装）、`tests.jl`（自分の確認）、`learning_log.md`（記録）です。
 課題ごとの `tests.jl` には、必須の数値・入出力テストと自分で設計するテストの TODO があります。
 
+理解度チェックを行った授業では，AIとの対話全文を `understanding-check-<lesson-id>.txt` というUTF-8テキストに保存し，対応するLETUSの課題へ提出します．対話全文はこのリポジトリやPRへ追加せず，課題内の `learning_log.md` には提出済みの確認と学んだ点だけを記録します．
+
 | 提出単位 | フォルダ | 内容 |
 |---|---|---|
 | F00 | `exercises/F00_environment/` | 環境診断 |
